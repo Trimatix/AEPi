@@ -58,7 +58,7 @@ def makeSingleTextureAEI(format: Format, compressedImage: bytes, width: int, hei
     """
     out = BytesIO()
     # Write header meta
-    out.write(bytes("AEImage\0", "utf-8"))
+    out.write(bytes("AEimage\0", "utf-8"))
     out.write(intbytes(format.value))
     
     for item in (
