@@ -1,6 +1,6 @@
 from io import BytesIO
 import struct
-from config import *
+from AEPi.config import *
 
 def intbytes(x: int) -> bytes:
     """Convert an integer to bytes
