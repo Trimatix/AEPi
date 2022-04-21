@@ -31,8 +31,6 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
-
 **Abyss Engine** is an internal-only game engine developed by Deep Silver FishLabs, for the development of the Galaxy on Fire game series.
 
 The engine uses a proprietary file format for grids of images, called Abyss Engine Image (AEI). The internal image representiation is platform dependant, for example Android texture files are compressed with [Ericsson Texture Compression (ETC)](https://github.com/Ericsson/ETCPACK).
