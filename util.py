@@ -2,23 +2,60 @@ from io import BytesIO
 import struct
 from config import *
 
-def intbytes(x):
+def intbytes(x: int) -> bytes:
+    """Convert an integer to bytes
+
+    :param x: The integer to convert
+    :type x: int
+    :return: `x` converted to bytes
+    :rtype: bytes
+    """
     return bytes((x,))
 
 
-def uint16(x: int, endianness: Endianness):
-    """A C unsigned short
+def uint16(x: int, endianness: Endianness) -> bytes:
+    """Convert an integer to a C unsigned short.
+
+    :param x: The integer to convert
+    :type x: int
+    :param endianness: The bit-endianness
+    :type endianness: Endianness
+    :return: `x` in C uint16-representation
+    :rtype: bytes
     """
     return struct.pack(endianness.value + "H", x)
 
     
-def uint32(x: int, endianness: Endianness):
-    """A C unsigned int
+def uint32(x: int, endianness: Endianness) -> bytes:
+    """Convert an integer to a C unsigned int.
+
+    :param x: The integer to convert
+    :type x: int
+    :param endianness: The bit-endianness
+    :type endianness: Endianness
+    :return: `x` in C uint32-representation
+    :rtype: bytes
     """
     return struct.pack(endianness.value + "I", x)
 
 
 def makeSingleTextureAEI(format: Format, compressedImage: bytes, width: int, height: int, endianness: Endianness) -> BytesIO:
+    """Convert a single, pre-compressed texture to an AEI file.
+    No validation is performed on `compressedImage` or its format. `format`, `width` and `height` are assumed to be correct.
+
+    :param format: The format that `compressedImage` was compressed into
+    :type format: Format
+    :param compressedImage: The compressed image to wrap in an AEI file
+    :type compressedImage: bytes
+    :param width: The width of `compressedImage` in pixels
+    :type width: int
+    :param height: The height of `compressedImage` in pixels
+    :type height: int
+    :param endianness: The bit-endianness
+    :type endianness: Endianness
+    :return: An AEI file wrapping `compressedImage`. These bytes can be written to a usable `.aei` file
+    :rtype: BytesIO
+    """
     out = BytesIO()
     # Write header meta
     out.write(bytes("AEImage\0", "utf-8"))
