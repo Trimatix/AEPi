@@ -1,2 +1,2 @@
-from AEPi.AEPi import *
-from AEPi.config import *
+from .AEPi import *
+from .config import *

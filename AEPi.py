@@ -1,7 +1,7 @@
 from PIL import Image # type: ignore[import]
 import etcpak # type: ignore[import]
-from AEPi import config
-from AEPi import util
+from . import config
+from . import util
 from io import BytesIO
 
 
