@@ -1,6 +1,7 @@
 <h3 align="center">AEPi</h3>
   <p align="center">
-    Abyss Engine Image (AEI) conversion for python
+    Abyss Engine Image (AEI) conversion for python<br>
+    Join <a href='https://discord.gg/Qv8zTur'>The Kaamo Club discord server</a> for Galaxy on Fire fans and modding
   </p>
 </div>
 
