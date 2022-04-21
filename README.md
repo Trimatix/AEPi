@@ -1,6 +1,7 @@
 <h3 align="center">AEPi</h3>
   <p align="center">
-    Abyss Engine Image (AEI) conversion for python
+    Abyss Engine Image (AEI) conversion for python<br>
+    Join <a href='https://discord.gg/Qv8zTur'>The Kaamo Club discord server</a> for Galaxy on Fire fans and modding
   </p>
 </div>
 
@@ -30,8 +31,6 @@
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
 **Abyss Engine** is an internal-only game engine developed by Deep Silver FishLabs, for the development of the Galaxy on Fire game series.
 
