@@ -79,6 +79,9 @@ png = Image.open(png_path)
 aei_bytes = AEPi.makeAEI(my_png, AEPi.Platform.Android)
 with open(aei_path, "wb") as f:
     f.write(aei_bytes.getbuffer())
+
+aei_bytes.close()
+png.close()
 ```
 
 
