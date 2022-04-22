@@ -68,6 +68,7 @@ AEPi is not currently available as a pypi package. It should instead be used as 
 
 For maximum flexibility, AEPi returns AEIs as BytesIO objects.
 
+The recommended best practise is to wrap your AEPi call in a `with` statement, to ensure that the file is cleaned out of memory when it goes out of scope. The below example will save your converted image to a usable AEI file on disk:
 ```py
 import AEPi
 from PIL import Image
@@ -75,15 +76,24 @@ from PIL import Image
 png_path = "ship-texture.png"
 aei_path = "converted.aei"
 
-png = Image.open(png_path)
-aei_bytes = AEPi.makeAEI(my_png, AEPi.Platform.Android)
-with open(aei_path, "wb") as f:
-    f.write(aei_bytes.getbuffer())
-
-aei_bytes.close()
-png.close()
+with Image.open(png_path) as png, open(aei_path, "wb") as aei_file:
+    with AEPi.makeAEI(png, AEPi.Platform.Android) as aei_bytes:
+        aei_file.write(aei_bytes.getbuffer())
 ```
 
+If needed, a less-best-practise approach might be to take AEPi's output outside of a `with` scope. Ensure that you **always** call `.close()` to clean the image out of memory when it is no longer needed, to avoid memory leaks:
+```py
+png = Image.open(png_path)
+aei_bytes = AEPi.makeAEI(my_png, AEPi.Platform.Android)
+aei_file = open(aei_path, "wb")
+aei_file.write(aei_bytes.getbuffer())
+
+...
+
+aei_file.close()
+aei_bytes.close()
+png.close()
+````
 
 
 <!-- ROADMAP -->
