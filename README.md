@@ -55,8 +55,8 @@ AEPi is not currently available as a pypi package. It should instead be used as 
 ### Installation
 
 1. Copy AEPi into your code, either by:
-    a. If your project is a git repository, I would recommend installing AEPi as a git submodule with: `git submodule add https://github.com/Trimatix/AEPi.git`
-    b. If your project is not a git repository, then click the green 'code' dropdown at the top of this page, and select Download Zip. Unzip the file into your project directory.
+    1. If your project is a git repository, I would recommend installing AEPi as a git submodule with: `git submodule add https://github.com/Trimatix/AEPi.git`
+    2. If your project is not a git repository, then click the green 'code' dropdown at the top of this page, and select Download Zip. Unzip the file into your project directory.
 2. Install dependencies
    ```sh
    cd AEPi && pip install -r requirements.txt
