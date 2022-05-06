@@ -39,7 +39,7 @@ The AEI format was analysed by the Russian modding group 'CatLabs', who later cr
 
 This tool was closed-source, and relied on a windows DLL for compression. AEPi is a minimal recreation of the image conversion logic provided by AEIEditor, leaning on [K0lb3](https://github.com/K0lb3)'s [etcpak](https://github.com/K0lb3/etcpak) for DirectX and Ericsson image compression internally.
 
-AEPi was created for the conversion of ship textures for Galaxy on Fire 2, and so currently, only single-texutre conversions are supported, either for Android (ETC) or PC (DXT5) use.
+AEPi was created for the conversion of ship textures for Galaxy on Fire 2, and so currently, only single-texture conversions are supported, either for Android (ETC) or PC (DXT5) use.
 
 
 <!-- GETTING STARTED -->
