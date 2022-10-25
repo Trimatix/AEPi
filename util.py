@@ -1,6 +1,30 @@
 from io import BytesIO
+from os import PathLike
 import struct
+from typing import List, Union
+from PIL import Image
 from .config import *
+
+class Texture:
+    def __init__(self, x: int, y: int, width: int, height: int, image: Image.Image, symbolData: int) -> None:
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.image = image
+        self.symbolData = symbolData
+
+
+class AEI:
+    def __init__(self, format: Format, width: int, height: int, endianness: Endianness, textures: List[Texture], quality: int, mipmapping: bool) -> None:
+        self.format = format
+        self.width = width
+        self.height = height
+        self.endianness = endianness
+        self.textures = textures
+        self.quality = quality
+        self.mipmapping = mipmapping
+
 
 def intbytes(x: int) -> bytes:
     """Convert an integer to bytes
