@@ -60,7 +60,7 @@ def makeAEI(im: Image.Image, platform: config.Platform, convertToBGR: bool = Tru
     hence the limitation placed on compression format.
     
     In AEI images, the blue and red channels are swapped - the image is BGR as opposed to RGB.
-    Unless `convertToBGR` is given as `False`, `im` is assumed to be in RGB format, and a copy will be made in BGR format prior to compression.    
+    Unless `convertToBGR` is given as `False`, `im` is assumed to be in RGB format. If platform.format is ETC, a copy will be made in BGR format prior to compression.    
 
     :param im: The image to convert
     :type im: Image.Image
@@ -69,10 +69,10 @@ def makeAEI(im: Image.Image, platform: config.Platform, convertToBGR: bool = Tru
     :return: The converted image as bytes
     :rtype: BytesIO
     """
-    if convertToBGR:
-        im = bgrToRgb(im)
-        
     platformCfg: config.PlatformConfiguration = platform.value
+    if platformCfg.format == config.Format.ETC1 and convertToBGR:
+        im = bgrToRgb(im)
+    
     compressed = _compress[platformCfg.format](im)
     aei = util.makeSingleTextureAEI(platformCfg.format, compressed, im.width, im.height, platformCfg.endianness)
     
