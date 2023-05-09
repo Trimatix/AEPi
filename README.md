@@ -59,44 +59,49 @@ python -m pip install aepi
 <!-- USAGE EXAMPLES -->
 ### Usage
 
+This library does not reflect the real representation of an AEI file on disk:<br>
+An AEI file is a single image, cordoned into multiple using bounding boxes.<br>
+In contrast, AEPi represents an AEI file as a set of individual images. These are transparently compiled into a single image at write time.<br>
+This design decision was made to improve the developer experience. However, it increases memory usage and file encode speed marginally, and complicates the case where two bounding boxes overlap. AEPi does not disallow this, but be aware that it is possible to overwrite an image in this way.
+
 For maximum flexibility, AEPi returns AEIs as BytesIO objects.
 
-The recommended best practise is to wrap your AEPi call in a `with` statement, to ensure that the file is cleaned out of memory when it goes out of scope.
+The recommended best practise is to wrap your AEPi call in a `with` statement, to ensure that all of the AEI's images are cleaned out of memory when it goes out of scope.
 
 #### Open an .aei file on disk
 
 ```py
 from AEPi import AEI
 
-aei = AEI.read("path/to/file.aei")
-
-print(
-  f"The AEI is compressed in {aei.format.name} format, "
-  f"with {len(aei.textures)} textures. "
-  f"Width: {aei.image.width} Height: {aei.image.height}"
+with AEI.read("path/to/file.aei") as aei:
+  print(
+    f"The AEI is compressed in {aei.format.name} format, "
+    f"with {len(aei.textures)} textures. "
+    f"Width: {aei.shape[0]} Height: {aei.shape[0]}"
 )
 ```
 
 #### Create a new AEI
 
 ```py
-from AEPi import AEI, CompressionFormat
+from AEPi import AEI, Texture, CompressionFormat,
 from PIL import Image
 
 image_path = "ship-texture.jpg"
 
 # create a new .aei file
 with Image.open(image_path) as image:
-  # if your image has BGRA channels, give isBgra=True
-  new_aei = AEI(image)
+  # Images are always assumed to be RGBA, not BGRA
+  with AEI(textures=[Texture(image, 0, 0)]) as new_aei:
+    ...
 ```
 
 #### Write a new AEI file to disk
 
 ```py
-  with open("path/to/newFile.aei", "wb") as new_file:
-    # compression format can be specified at write time, or in the constructor
-    aei.write(new_file, format=CompressionFormat.DXT5)
+    with open("path/to/newFile.aei", "wb") as new_file:
+      # compression format can be specified at write time, or in the constructor
+      aei.write(new_file, format=CompressionFormat.DXT5)
 ```
 
 <!-- ROADMAP -->
