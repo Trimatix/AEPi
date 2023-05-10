@@ -21,6 +21,9 @@ class AEI:
     The AEI shape is mutable.
     `format` and `quality` can be set in the constructor, or on call of `AEI.write`.
 
+    An AEI can be constructed either with its dimensions, or with an image.
+    If an image is used, the AEI is created with a copy of the image.
+
     Use the `addTexture` and `removeTexture` helper methods for texture management.
 
     To decode an existing AEI file, use `AEI.read`.
