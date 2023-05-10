@@ -138,6 +138,33 @@ class AEI:
         self._writeFooterMeta(fp, quality)
 
         return fp
+    
+
+    def _validateBoundingBox(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None) -> Tuple[int, int, int, int]:
+        if isinstance(val1, Texture):
+            y = val1.y
+            width = val1.width
+            height = val1.height
+            val1 = val1.x
+            
+        elif y is None or width is None or height is None:
+            raise ValueError("All of x, y, width and height are required")
+        
+        if val1 < 0 or width < 1 or y < 0 or height < 1 or val1 + width > self.width - 1 or y + height > self.height - 1:
+            raise ValueError("The bounding box falls out of bounds of the AEI")
+        
+        return (val1, y, width, height)
+
+
+    def _findTextureByBox(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None):
+        x, y, width, height = self._validateBoundingBox(val1, y, width, height)
+        
+        try:
+            texture = next(t for t in self.textures if t.x == x and t.y == y and t.width == width and t.height == height)
+        except StopIteration:
+            return None
+        
+        return texture
 
 
     def addTexture(self, image: Optional[Image.Image], texture: Texture):
@@ -154,11 +181,9 @@ class AEI:
         :raises ValueError: If the `texture` falls out of bounds of the AEI
         :raises ValueError: If the dimensions in `texture` do not match the dimensions of `image`
         """
-        if texture.x < 0 or texture.x > self.width - 1:
-            raise ValueError(f"x coordinate {texture.x} is out of range of the image (0 - {self.width - 1})")
-        
-        if texture.y < 0 or texture.y > self.height - 1:
-            raise ValueError(f"y coordinate {texture.y} is out of range of the image (0 - {self.height - 1})")
+        existingTexture = self._findTextureByBox(texture)
+        if existingTexture is not None:
+            raise ValueError("A texture already exists with the given bounding box")
         
         if image is None:
             self._texturesWithoutImages.add(texture)
@@ -169,12 +194,34 @@ class AEI:
             if image.mode != "RGBA":
                 raise ValueError(f"image must be mode RGBA, but {image.mode} was given")
             
-            if texture.x + texture.width > self.width - 1 or texture.y + texture.height > self.height - 1:
-                raise ValueError("The image falls out of bounds of the AEI")
-            
             self._image.paste(image, (texture.x, texture.y), image)
         
         self.textures.append(texture)
+
+
+    def replaceTexture(self, image: Image.Image, texture: Texture):
+        """Replace a texture in this AEI.
+        `image` is not retained, and can be closed after passing to this method without side effects.
+
+        :param image: The new image
+        :type image: Image.Image
+        :param texture: The new texture
+        :type texture: Texture
+        :raises ValueError: If `image.mode` is not `RGBA`
+        :raises ValueError: If the `texture` falls out of bounds of the AEI
+        :raises ValueError: If the dimensions in `texture` do not match the dimensions of `image`
+        """
+        existingTexture = self._findTextureByBox(texture)
+        if existingTexture is None:
+            raise KeyError(f"no texture was found with coordinates ({texture.x}, {texture.y}) and dimensions ({texture.width}, {texture.height})")
+        
+        if texture.width != image.width or texture.height != image.height:
+            raise ValueError("image dimensions do not match the texture dimensions")
+
+        if image.mode != "RGBA":
+            raise ValueError(f"image must be mode RGBA, but {image.mode} was given")
+        
+        self._image.paste(image, (texture.x, texture.y), image)
 
 
     @overload
@@ -189,19 +236,9 @@ class AEI:
         :param Optional[bool] clearImage: clear the area of the image. Default: Clear if an image was provided when the texture was added
         :raises KeyError: If no corresponding texture could be found for the bounding box
         """
-        if isinstance(val1, Texture):
-            y = val1.y
-            width = val1.width
-            height = val1.height
-            val1 = val1.x
-            
-        elif y is None or width is None or height is None:
-            raise ValueError("All of x, y, width and height are required")
-        
-        try:
-            texture = next(t for t in self.textures if t.x == val1 and t.y == y and t.width == width and t.height == height)
-        except StopIteration:
-            raise KeyError(f"no image was found with coordinates ({val1}, {y}) and dimensions ({width}, {height})")
+        texture = self._findTextureByBox(val1, y, width, height)
+        if texture is None:
+            raise KeyError(f"no texture was found with coordinates ({val1}, {y}) and dimensions ({width}, {height})")
         
         if clearImage is not None and clearImage or clearImage is None and texture not in self._texturesWithoutImages:
             # Clear the area that the texture occupied
@@ -224,19 +261,9 @@ class AEI:
         :rtype: Image.Image
         :raises KeyError: The provided bounding box falls out of bounds of the AEI
         """
-        if isinstance(val1, Texture):
-            y = val1.y
-            width = val1.width
-            height = val1.height
-            val1 = val1.x
-            
-        elif y is None or width is None or height is None:
-            raise ValueError("All of x, y, width and height are required")
+        x, y, width, height = self._validateBoundingBox(val1, y, width, height)
         
-        if val1 < 0 or y < 0 or val1 + width > self.width - 1 or y + height > self.height:
-            raise KeyError("The provided bounding box falls out of bounds of the AEI")
-        
-        return self._image.crop((val1, y, val1 + width, y + height))
+        return self._image.crop((x, y, x + width, y + height))
 
 
     def _writeHeaderMeta(self, fp: io.BytesIO, format: CompressionFormat):
