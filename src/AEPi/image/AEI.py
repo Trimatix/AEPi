@@ -29,13 +29,24 @@ class AEI:
     If the AEI is scoped in a `with` statement, when exiting the `with`,
     the AEI will attempt to close all images, and swallow any errors encountered.
     """
-    def __init__(self, shape: Tuple[int, int], format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> None:
+    @overload
+    def __init__(self, shape: Tuple[int, int], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None): ...
+    
+    @overload
+    def __init__(self, image: Image.Image, /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None): ...
+
+    def __init__(self, val1: Union[Image.Image, Tuple[int, int]], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None):
         self._textures: List[Texture] = []
         self._texturesWithoutImages: Set[Texture] = set()
-        self._shape = shape
         self.format = format
         self.quality: Optional[CompressionQuality] = quality
-        self._image = Image.new("RGBA", self._shape)
+
+        if isinstance(val1, Image.Image):
+            self._shape = val1.size
+            self._image = val1.copy()
+        else:
+            self._shape = val1
+            self._image = Image.new("RGBA", self._shape)
 
 
     @property
