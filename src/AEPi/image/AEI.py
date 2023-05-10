@@ -1,7 +1,7 @@
 import io
 from os import PathLike
 from types import TracebackType
-from typing import TYPE_CHECKING, List, Optional, Tuple, Type, TypeVar, Union, overload
+from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Type, TypeVar, Union, overload
 from PIL import Image
 
 from ..lib import binaryio, imageOps
@@ -29,14 +29,13 @@ class AEI:
     If the AEI is scoped in a `with` statement, when exiting the `with`,
     the AEI will attempt to close all images, and swallow any errors encountered.
     """
-    def __init__(self, shape: Optional[Tuple[int, int]] = None, textures: Optional[List[Texture]] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> None:
-        if shape is None and not textures:
-            raise ValueError("shape or at least one texture must be given")
-
-        self._textures = textures or []
-        self._shape = imageOps.imageDimensionsForTextures(self.textures) if shape is None else shape
+    def __init__(self, shape: Tuple[int, int], format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> None:
+        self._textures: List[Texture] = []
+        self._texturesWithoutImages: Set[Texture] = set()
+        self._shape = shape
         self.format = format
         self.quality: Optional[CompressionQuality] = quality
+        self._image = Image.new("RGBA", self._shape)
 
 
     @property
@@ -50,17 +49,37 @@ class AEI:
     
 
     @shape.setter
-    def setShape(self, value: Tuple[int, int]):
+    def shape(self, value: Tuple[int, int]):
         widthShrunk = value[0] < self.shape[0]
         heightShrunk = value[1] < self.shape[1]
 
         if widthShrunk or heightShrunk:
             for tex in self.textures:
-                if widthShrunk and tex.x + tex.image.width < value[0] \
-                        or heightShrunk and tex.y + tex.image.height < value[1]:
+                if widthShrunk and tex.x + tex.width < value[0] \
+                        or heightShrunk and tex.y + tex.height < value[1]:
                     raise ValueError(f"Changing shape from ({self.shape[0]}, {self.shape[1]}) to ({value[0]}, {value[1]}) would cause texture ({tex.x}, {tex.y}) to fall out of bounds")
         
         self._shape = value
+
+
+    @property
+    def width(self):
+        return self.shape[0]
+    
+
+    @width.setter
+    def width(self, value: int):
+        self.shape = (value, self.height)
+    
+
+    @property
+    def height(self):
+        return self.shape[1]
+    
+
+    @height.setter
+    def height(self, value: int):
+        self.shape = (self.width, value)
 
 
     @property
@@ -119,104 +138,106 @@ class AEI:
         self._writeFooterMeta(fp, quality)
 
         return fp
-    
 
-    @overload
-    def addTexture(self, texture: Texture, /):
-        """Add a texture to this AEI, directly by the `Texture` object.
 
-        :param texture: The new texture
-        :type texture: Texture
-        :raises ValueError: If `image.mode` is not `RGBA`
-        :raises ValueError: If `x` is out of bounds of the AEI
-        :raises ValueError: If `y` is out of bounds of the AEI
-        """
-
-    @overload
-    def addTexture(self, image: Image.Image, x: int, y: int, /):
-        """Add a texture to this AEI, by its image and coordinates.
+    def addTexture(self, image: Optional[Image.Image], texture: Texture):
+        """Add a texture to this AEI.
+        If an image is provided, it will be added to the underlying image. Otherwise, no change is made.
+        This only really useful for creating overlapping textures.
+        `image` is not retained, and can be closed after passing to this method without side effects.
 
         :param image: The new image
         :type image: Image.Image
-        :param x: The x-coordinate of the new texture
-        :type x: int
-        :param y: The y-coordinate of the new texture
-        :type y: int
+        :param texture: The new texture
+        :type texture: Texture
         :raises ValueError: If `image.mode` is not `RGBA`
-        :raises ValueError: If `x` is out of bounds of the AEI
-        :raises ValueError: If `y` is out of bounds of the AEI
+        :raises ValueError: If the `texture` falls out of bounds of the AEI
+        :raises ValueError: If the dimensions in `texture` do not match the dimensions of `image`
         """
-
-    def addTexture(self, imageOrTexture: Union[Image.Image, Texture], x: Optional[int] = None, y: Optional[int] = None, /):
-        if not isinstance(imageOrTexture, Texture):
-            if x is None or y is None:
-                raise ValueError("both x and y are required to add a texture by its coordinates")
-            
-            imageOrTexture = Texture(
-                imageOrTexture,
-                x,
-                y
-            )
-
-        if imageOrTexture.image.mode != "RGBA":
-            raise ValueError(f"image must be mode RGBA, but {imageOrTexture.image.mode} was given")
+        if texture.x < 0 or texture.x > self.width - 1:
+            raise ValueError(f"x coordinate {texture.x} is out of range of the image (0 - {self.width - 1})")
         
-        if imageOrTexture.x < 0 or imageOrTexture.x > self.shape[0] - 1:
-            raise ValueError(f"x coordinate {imageOrTexture.x} is out of range of the image (0 - {self.shape[0] - 1})")
+        if texture.y < 0 or texture.y > self.height - 1:
+            raise ValueError(f"y coordinate {texture.y} is out of range of the image (0 - {self.height - 1})")
         
-        if imageOrTexture.y < 0 or imageOrTexture.y > self.shape[1] - 1:
-            raise ValueError(f"y coordinate {imageOrTexture.y} is out of range of the image (0 - {self.shape[1] - 1})")
-        
-        self.textures.append(imageOrTexture)
-
-
-    @overload
-    def removeTexture(self, image: Image.Image, /):
-        """Remove a texture from this AEI, by its image.
-        The texture is looked up by image object identity; `image` must be the same object in memory to be removed.
-
-        :raises KeyError: If no corresponding texture could be found for the image
-        """
-
-    @overload
-    def removeTexture(self, texture: Texture, /):
-        """Remove a texture from this AEI, directly by the `Texture` object.
-        The texture is looked up by image object identity; `texture` must be the same object in memory to be removed.
-
-        :raises KeyError: If `texture` does not belong to the AEI
-        """
-
-    @overload
-    def removeTexture(self, x: int, y: int, /):
-        """Remove a texture from this AEI, by its coordinates.
-
-        :raises KeyError: If no corresponding texture could be found for the coordinates
-        """
-
-    def removeTexture(self, val1: Union[Image.Image, Texture, int], y: Optional[int] = None, /):
-        if isinstance(val1, Image.Image):
-            try:
-                tex = next(i for i, t in enumerate(self.textures) if t.image is val1)
-            except StopIteration:
-                raise KeyError("image does not belong to this AEI")
-            
-        elif isinstance(val1, Texture):
-            try:
-                tex = self.textures.index(val1)
-            except StopIteration:
-                raise KeyError("texture does not belong to this AEI")
-            
-        elif y is None:
-            raise ValueError("both x and y are required to remove a texture by its coordinates")
-        
+        if image is None:
+            self._texturesWithoutImages.add(texture)
         else:
-            try:
-                tex = next(i for i, t in enumerate(self.textures) if t.x == val1 and t.y == y)
-            except StopIteration:
-                raise KeyError(f"no image was found with coordinates ({val1}, {y})")
+            if texture.width != image.width or texture.height != image.height:
+                raise ValueError("image dimensions do not match the texture dimensions")
+
+            if image.mode != "RGBA":
+                raise ValueError(f"image must be mode RGBA, but {image.mode} was given")
+            
+            if texture.x + texture.width > self.width - 1 or texture.y + texture.height > self.height - 1:
+                raise ValueError("The image falls out of bounds of the AEI")
+            
+            self._image.paste(image, (texture.x, texture.y), image)
         
-        self.textures.pop(tex)
+        self.textures.append(texture)
+
+
+    @overload
+    def removeTexture(self, texture: Texture, /, *, clearImage: Optional[bool] = None): ...
+
+    @overload
+    def removeTexture(self, x: int, y: int, width: int, height: int, /, *, clearImage: Optional[bool] = None): ...
+
+    def removeTexture(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None, /, *, clearImage: Optional[bool] = None):
+        """Remove a texture from this AEI, by its bounding box.
+
+        :param Optional[bool] clearImage: clear the area of the image. Default: Clear if an image was provided when the texture was added
+        :raises KeyError: If no corresponding texture could be found for the bounding box
+        """
+        if isinstance(val1, Texture):
+            y = val1.y
+            width = val1.width
+            height = val1.height
+            val1 = val1.x
+            
+        elif y is None or width is None or height is None:
+            raise ValueError("All of x, y, width and height are required")
+        
+        try:
+            texture = next(t for t in self.textures if t.x == val1 and t.y == y and t.width == width and t.height == height)
+        except StopIteration:
+            raise KeyError(f"no image was found with coordinates ({val1}, {y}) and dimensions ({width}, {height})")
+        
+        if clearImage is not None and clearImage or clearImage is None and texture not in self._texturesWithoutImages:
+            # Clear the area that the texture occupied
+            self._image.paste(
+                (0, 0, 0, 0),
+                (texture.x, texture.y, texture.x + texture.width, texture.y + texture.height)
+            )
     
+
+    @overload
+    def getTexture(self, texture: Texture, /) -> Image.Image: ...
+
+    @overload
+    def getTexture(self, x: int, y: int, width: int, height: int, /) -> Image.Image: ...
+
+    def getTexture(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None, /) -> Image.Image:
+        """Get a copy of the image defined by the provided bounding box.
+
+        :returns: a copy of the image defined by the provided bounding box
+        :rtype: Image.Image
+        :raises KeyError: The provided bounding box falls out of bounds of the AEI
+        """
+        if isinstance(val1, Texture):
+            y = val1.y
+            width = val1.width
+            height = val1.height
+            val1 = val1.x
+            
+        elif y is None or width is None or height is None:
+            raise ValueError("All of x, y, width and height are required")
+        
+        if val1 < 0 or y < 0 or val1 + width > self.width - 1 or y + height > self.height:
+            raise KeyError("The provided bounding box falls out of bounds of the AEI")
+        
+        return self._image.crop((val1, y, val1 + width, y + height))
+
 
     def _writeHeaderMeta(self, fp: io.BytesIO, format: CompressionFormat):
         fp.write(FILE_TYPE_HEADER)
@@ -228,8 +249,8 @@ class AEI:
 
         # AEI dimensions and texture count
         writeUInt16(
-            self.shape[0],
-            self.shape[1],
+            self.width,
+            self.height,
             len(self.textures)
         )
 
@@ -238,41 +259,25 @@ class AEI:
             writeUInt16(
                 texture.x,
                 texture.y,
-                texture.image.width,
-                texture.image.height
+                texture.width,
+                texture.height
             )
     
 
     def _writeImageContent(self, fp: io.BytesIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
         imageCodec = codec.compressorFor(format)
 
-        image = self.build(True)
-        compressed = imageCodec.compress(image, format, quality)
+        imageOps.switchRGBA_BGRA(self._image)
+
+        compressed = imageCodec.compress(self._image, format, quality)
+
+        imageOps.switchRGBA_BGRA(self._image)
 
         # image length only appears in compressed AEIs
         if format.isCompressed:
             fp.write(binaryio.uint32(len(compressed), ENDIANNESS))
 
         fp.write(compressed)
-
-
-    def build(self, bgra: bool) -> Image.Image:
-        """Combile all textures into a single image.
-
-        :param bgra: Switch the colour channels from RGBA to BGRA. Defaults to True
-        :type bgra: bool
-        :return: A new image containing all textures in this AEI
-        :rtype: Image.Image
-        """
-        image = Image.new("RGBA", self.shape)
-
-        for tex in self.textures:
-            image.paste(tex.image, (tex.x, tex.y), tex.image)
-
-        if bgra:
-            imageOps.switchRGBA_BGRA(image)
-
-        return image
 
 
     def _writeSymbols(self, fp: io.BytesIO):
@@ -285,19 +290,22 @@ class AEI:
             fp.write(binaryio.intToBytes(quality))
 
 
+    def close(self):
+        """Close the underlying image.
+        """
+        self._image.close()
+
+
     def __enter__(self):
+        """This method is called when entering a `with` statement.
+        """
         pass
 
 
-    def _silentCloseAllTextures(self):
-        """Attempt to close all images held in the AEI, swallowing errors.
-        """
-        for tex in self.textures:
-            try:
-                tex.image.close()
-            except Exception:
-                pass
-
-
     def __exit__(self, exceptionType: Type[TException], exception: TException, trace: TracebackType):
-        self._silentCloseAllTextures()
+        """This method is called when exiting a `with` statement.
+        """
+        try:
+            self.close()
+        except:
+            pass

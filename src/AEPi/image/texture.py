@@ -1,12 +1,6 @@
-from PIL.Image import Image
-
 class Texture:
-    def __init__(self, image: Image, x: int, y: int) -> None:
+    def __init__(self, x: int, y: int, width: int, height: int) -> None:
         self.x = x
         self.y = y
-        self._image = image
-
-
-    @property
-    def image(self):
-        return self._image
+        self.width = width
+        self.height = height

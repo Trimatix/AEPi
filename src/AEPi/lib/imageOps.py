@@ -34,10 +34,10 @@ def imageDimensionsForTextures(textures: List[texture.Texture]) -> Tuple[int, in
     height = 0
 
     for tex in textures:
-        if (texWidth := tex.x + tex.image.width) > width:
+        if (texWidth := tex.x + tex.width) > width:
             width = texWidth
 
-        if (texHeight := tex.x + tex.image.height) > height:
+        if (texHeight := tex.y + tex.height) > height:
             height = texHeight
 
     return width, height

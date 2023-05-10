@@ -59,10 +59,7 @@ python -m pip install aepi
 <!-- USAGE EXAMPLES -->
 ### Usage
 
-This library does not reflect the real representation of an AEI file on disk:<br>
-An AEI file is a single image, cordoned into multiple using bounding boxes.<br>
-In contrast, AEPi represents an AEI file as a set of individual images. These are transparently compiled into a single image at write time.<br>
-This design decision was made to improve the developer experience. However, it increases memory usage and file encode speed marginally, and complicates the case where two bounding boxes overlap. AEPi does not disallow this, but be aware that it is possible to overwrite an image in this way.
+This library reflects the real representation of an AEI file on disk; though textures are added to and read from an AEI object as individual images, the underlying representation is a single image. This improves encoding/decoding performance, and enables overlapping textures.
 
 For maximum flexibility, AEPi returns AEIs as BytesIO objects.
 
