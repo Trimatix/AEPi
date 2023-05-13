@@ -31,5 +31,5 @@ class EtcPakCodec(ImageCodecAdaptor):
 
     @classmethod
     def decompress(cls, fp: BytesIO, format: CompressionFormat, quality: CompressionQuality) -> Image:
-        raise NotImplemented(f"Codec {EtcPakCodec.__name__} is not capable of decompression")
+        raise NotImplementedError(f"Codec {EtcPakCodec.__name__} is not capable of decompression")
     
