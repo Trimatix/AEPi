@@ -4,6 +4,56 @@
     Join <a href='https://discord.gg/Qv8zTur'>The Kaamo Club discord server</a> for Galaxy on Fire fans and modding
   </p>
 </div>
+<p align="center">
+  <a href="https://github.com/Trimatix/AEPi/actions"
+    ><img
+      src="https://img.shields.io/github/actions/workflow/status/Trimatix/AEPi/testing.yml?branch=main"
+      alt="GitHub Actions workflow status"
+  /></a>
+  <a href="https://github.com/Trimatix/AEPi/projects/1?card_filter_query=label%3Abug"
+    ><img
+      src="https://img.shields.io/github/issues-search?color=eb4034&label=bug%20reports&query=repo%3ATrimatix%2FAEPi%20is%3Aopen%20label%3Abug"
+      alt="GitHub open bug reports"
+  /></a>
+  <a href="https://github.com/Trimatix/AEPi/actions"
+    ><img
+      src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/Trimatix/2551cac90336c1d1073d8615407cc72d/raw/AEPi__heads_main.json"
+      alt="Test coverage"
+  /></a>
+</p>
+<p align="center">
+  <a href="https://pypi.org/project/AEPi"
+    ><img
+      src='https://badgen.net/pypi/v/AEPi/'
+      alt="Pypi package version"
+  /></a>
+  <a href="https://pypi.org/project/AEPi"
+    ><img
+      src="https://img.shields.io/pypi/pyversions/AEPi.svg"
+      alt="Minimum supported Python version"
+  /></a>
+  <a href="https://github.com/Trimatix/AEPi/blob/master/LICENSE"
+    ><img
+      src="https://img.shields.io/github/license/Trimatix/AEPi.svg"
+      alt="License"
+</p>
+<p align="center">
+  <a href="https://sonarcloud.io/dashboard?id=Trimatix_AEPi"
+    ><img
+      src="https://sonarcloud.io/api/project_badges/measure?project=Trimatix_AEPi&metric=bugs"
+      alt="SonarCloud bugs analysis"
+  /></a>
+  <a href="https://sonarcloud.io/dashboard?id=Trimatix_AEPi"
+    ><img
+      src="https://sonarcloud.io/api/project_badges/measure?project=Trimatix_AEPi&metric=code_smells"
+      alt="SonarCloud code smells analysis"
+  /></a>
+  <a href="https://sonarcloud.io/dashboard?id=Trimatix_AEPi"
+    ><img
+      src="https://sonarcloud.io/api/project_badges/measure?project=Trimatix_AEPi&metric=alert_status"
+      alt="SonarCloud quality gate status"
+  /></a>
+</p>
 
 
 
@@ -34,88 +84,81 @@
 
 **Abyss Engine** is an internal-only game engine developed by Deep Silver FishLabs, for the development of the Galaxy on Fire game series.
 
-The engine uses a proprietary file format for grids of images, called Abyss Engine Image (AEI). The internal image representiation is platform dependant, for example Android texture files are compressed with [Ericsson Texture Compression (ETC)](https://github.com/Ericsson/ETCPACK).
+The engine uses a proprietary file format for grids of images, called Abyss Engine Image (AEI). The image compression is platform dependant, for example Android texture files are compressed with [Ericsson Texture Compression (ETC)](https://github.com/Ericsson/ETCPACK).
+
 The AEI format was analysed by the Russian modding group 'CatLabs', who later created a GUI and command-line tool for conversion between PNG and AEI, named AEIEditor.
 
 This tool was closed-source, and relied on a windows DLL for compression. AEPi is a minimal recreation of the image conversion logic provided by AEIEditor, leaning on [K0lb3](https://github.com/K0lb3)'s [etcpak](https://github.com/K0lb3/etcpak) for DirectX and Ericsson image compression internally.
 
-AEPi was created for the conversion of ship textures for Galaxy on Fire 2, and so currently, only single-texture conversions are supported, either for Android (ETC) or PC (DXT5) use.
+AEPi was created for the conversion of ship textures for Galaxy on Fire 2, and so currently, only compression is supported, either for Android (ETC) or PC (DXT5) use.
 
 
 <!-- GETTING STARTED -->
 ## Getting Started
-
-AEPi is not currently available as a pypi package. It should instead be used as a submodule in your project, for which no additional setup is needed.
-
-
 ### Prerequisites
 
 * python 3.6+
 
 ### Installation
 
-1. Copy AEPi into your code, either by:
-    1. If your project is a git repository, I would recommend installing AEPi as a git submodule with: `git submodule add https://github.com/Trimatix/AEPi.git`
-    2. If your project is not a git repository, then click the green 'code' dropdown at the top of this page, and select Download Zip. Unzip the file into your project directory.
-2. Install dependencies
-   ```sh
-   cd AEPi && pip install -r requirements.txt
-   ```
-
+install AEPi from PyPi:
+```
+python -m pip install aepi
+```
 
 <!-- USAGE EXAMPLES -->
-## Usage
+### Usage
+
+This library reflects the real representation of an AEI file on disk; though textures are added to and read from an AEI object as individual images, the underlying representation is a single image. This improves encoding/decoding performance, and enables overlapping textures.
 
 For maximum flexibility, AEPi returns AEIs as BytesIO objects.
 
-The recommended best practise is to wrap your AEPi call in a `with` statement, to ensure that the file is cleaned out of memory when it goes out of scope. The below example will save your converted image to a usable AEI file on disk:
+The recommended best practise is to wrap your AEPi call in a `with` statement, to ensure that all of the AEI's images are cleaned out of memory when it goes out of scope.
+
+#### Open an .aei file on disk
+
 ```py
-import AEPi
-from PIL import Image
+from AEPi import AEI
 
-png_path = "ship-texture.png"
-aei_path = "converted.aei"
-
-with Image.open(png_path) as png, open(aei_path, "wb") as aei_file:
-    with AEPi.makeAEI(png, AEPi.Platform.Android) as aei_bytes:
-        aei_file.write(aei_bytes.getbuffer())
+with AEI.read("path/to/file.aei") as aei:
+  print(
+    f"The AEI is compressed in {aei.format.name} format, "
+    f"with {len(aei.textures)} textures. "
+    f"Width: {aei.shape[0]} Height: {aei.shape[0]}"
+)
 ```
 
-If needed, a less-best-practise approach might be to take AEPi's output outside of a `with` scope. Ensure that you **always** call `.close()` to clean the image out of memory when it is no longer needed, to avoid memory leaks:
+#### Create a new AEI
+
 ```py
-png = Image.open(png_path)
-aei_bytes = AEPi.makeAEI(my_png, AEPi.Platform.Android)
-aei_file = open(aei_path, "wb")
-aei_file.write(aei_bytes.getbuffer())
+from AEPi import AEI, CompressionFormat,
+from PIL import Image
 
-...
+image_path = "ship-texture.png"
+image2_path = "another-texture.png"
 
-aei_file.close()
-aei_bytes.close()
-png.close()
-````
+# create a new .aei file
+with Image.open(image_path) as image, Image.open(image2_path) as image2:
+  # Images are always assumed to be RGBA, not BGRA
+  with AEI(image) as new_aei:
+    # 'textures' - image bounding boxes
+    new_aei.addTexture(image2, 0, 0)
+    # The below operation is legal, but would leave unused image content in the AEI!
+    new_aei.removeTexture(0, 0, image2.width, image2.height, clearImage=False)
+```
 
+#### Write a new AEI file to disk
+
+```py
+    with open("path/to/newFile.aei", "wb") as new_file:
+      # compression format can be specified at write time, or in the constructor
+      aei.write(new_file, format=CompressionFormat.DXT5)
+```
 
 <!-- ROADMAP -->
 ## Roadmap
 
-- [ ] Support multiple images for a single AEI
-- [ ] Support conversion from AEI to PNG
-    - [ ] Support conversion of multi-image AEIs
-- [ ] Support direct selection of compression formats
-    - [ ] ETC1 and DXT5
-    - [ ] None
-    - [ ] None, interface
-    - [ ] None, CubeMap(PC)
-    - [ ] None, CubeMap
-    - [ ] DXT1
-    - [ ] DXT3
-    - [ ] PVRTC1 2bpp
-    - [ ] PVRTC1 4bpp
-    - [ ] ATC 4bpp
-- [ ] Support more platforms
-    - [ ] iOS
-    - [ ] macOS (does macOS use DXT5?)
+The project roadmap is now maintained as milestones: https://github.com/Trimatix/AEPi/milestones
 
 To report a bug or request a feature, please submit an issue to the [open issues](https://github.com/Trimatix/AEPi/issues) page of this repository.
 
