@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/Trimatix/AEPi/actions"
     ><img
-      src="https://img.shields.io/github/workflow/status/Trimatix/AEPi/testing"
+      src="https://img.shields.io/github/actions/workflow/status/Trimatix/AEPi/testing.yml?branch=main"
       alt="GitHub Actions workflow status"
   /></a>
   <a href="https://github.com/Trimatix/AEPi/projects/1?card_filter_query=label%3Abug"
