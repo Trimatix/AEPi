@@ -1,16 +1,14 @@
 import io
 from os import PathLike
 from types import TracebackType
-from typing import TYPE_CHECKING, List, Optional, Set, Tuple, Type, TypeVar, Union, overload
+from typing import List, Optional, Set, Tuple, Type, TypeVar, Union, overload
 from PIL import Image
 
 from ..lib import binaryio, imageOps
 
 from ..constants import CompressionFormat, FILE_TYPE_HEADER, ENDIANNESS, CompressionQuality
 from .. import codec
-
-if TYPE_CHECKING:
-    from .texture import Texture
+from .texture import Texture
 
 TException = TypeVar("TException", bound=Exception)
 
@@ -69,8 +67,8 @@ class AEI:
 
         if widthShrunk or heightShrunk:
             for tex in self.textures:
-                if widthShrunk and tex.x + tex.width < value[0] \
-                        or heightShrunk and tex.y + tex.height < value[1]:
+                if widthShrunk and tex.x + tex.width > value[0] \
+                        or heightShrunk and tex.y + tex.height > value[1]:
                     raise ValueError(f"Changing shape from ({self.shape[0]}, {self.shape[1]}) to ({value[0]}, {value[1]}) would cause texture ({tex.x}, {tex.y}) to fall out of bounds")
         
         self._shape = value
@@ -105,53 +103,6 @@ class AEI:
         :rtype: List[Texture]
         """
         return self._textures
-
-
-    @classmethod
-    def read(cls, fp: Union[str, PathLike, io.BytesIO]) -> "AEI":
-        """Read an AEI file from bytes, or a file.
-        `fp` can be a path to a file, or an in-memory buffer containing the contents of an encoded AEI file, including metadata.
-
-        :param fp: The AEI itself, or a path to an AEI file on disk
-        :type fp: Union[str, PathLike, io.BytesIO]
-        :return: A new AEI file object, containing the decoded contents of `fp`
-        :rtype: AEI
-        """
-        # if tempFp := (not isinstance(fp, io.BytesIO)):
-        #     fp = open(fp, "rb")
-        raise NotImplementedError()
-        # if tempFp:
-        #     fp.close()
-    
-
-    def write(self, fp: Optional[io.BytesIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> io.BytesIO:
-        """Write this AEI to a BytesIO file.
-
-        :param fp: Optional file to write to. If not given, a new one is created. defaults to None
-        :type fp: Optional[io.BytesIO], optional
-        :param format: Override for the compression format. defaults to the setting on the AEI
-        :type format: Optional[CompressionFormat], optional
-        :param quality: Override for the compression quality. defaults to the setting on the AEI
-        :type quality: Optional[CompressionQuality], optional
-        :raises ValueError: If format is omitted and no format is set on the AEI
-        :raises ValueError: If the AEI has no textures
-        :return: A file containing the AEI, including the compressed image and full metadata
-        :rtype: io.BytesIO
-        """
-        format = format or self.format
-        quality = self.quality if quality is None else quality
-
-        if format is None:
-            raise ValueError("This AEI has no compression format specified. Set self.format, or specify the format in the self.toFile.format kwarg")
-
-        fp = io.BytesIO() if fp is None else fp
-
-        self._writeHeaderMeta(fp, format)
-        self._writeImageContent(fp, format, quality)
-        self._writeSymbols(fp)
-        self._writeFooterMeta(fp, quality)
-
-        return fp
     
 
     def _validateBoundingBox(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None) -> Tuple[int, int, int, int]:
@@ -164,7 +115,7 @@ class AEI:
         elif y is None or width is None or height is None:
             raise ValueError("All of x, y, width and height are required")
         
-        if val1 < 0 or width < 1 or y < 0 or height < 1 or val1 + width > self.width - 1 or y + height > self.height - 1:
+        if val1 < 0 or width < 1 or y < 0 or height < 1 or val1 + width > self.width or y + height > self.height:
             raise ValueError("The bounding box falls out of bounds of the AEI")
         
         return (val1, y, width, height)
@@ -260,6 +211,8 @@ class AEI:
                 (0, 0, 0, 0),
                 (texture.x, texture.y, texture.x + texture.width, texture.y + texture.height)
             )
+
+        self._textures.remove(texture)
     
 
     @overload
@@ -280,9 +233,63 @@ class AEI:
         return self._image.crop((x, y, x + width, y + height))
 
 
+    @classmethod
+    def read(cls, fp: Union[str, PathLike, io.BytesIO]) -> "AEI":
+        """Read an AEI file from bytes, or a file.
+        `fp` can be a path to a file, or an in-memory buffer containing the contents of an encoded AEI file, including metadata.
+
+        :param fp: The AEI itself, or a path to an AEI file on disk
+        :type fp: Union[str, PathLike, io.BytesIO]
+        :return: A new AEI file object, containing the decoded contents of `fp`
+        :rtype: AEI
+        """
+        # if tempFp := (not isinstance(fp, io.BytesIO)):
+        #     fp = open(fp, "rb")
+        raise NotImplementedError()
+        # if tempFp:
+        #     fp.close()
+    
+
+    def write(self, fp: Optional[io.BytesIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> io.BytesIO:
+        """Write this AEI to a BytesIO file.
+
+        :param fp: Optional file to write to. If not given, a new one is created. defaults to None
+        :type fp: Optional[io.BytesIO], optional
+        :param format: Override for the compression format. defaults to the setting on the AEI
+        :type format: Optional[CompressionFormat], optional
+        :param quality: Override for the compression quality. defaults to the setting on the AEI
+        :type quality: Optional[CompressionQuality], optional
+        :raises ValueError: If format is omitted and no format is set on the AEI
+        :raises ValueError: If the AEI has no textures
+        :return: A file containing the AEI, including the compressed image and full metadata
+        :rtype: io.BytesIO
+        """
+        format = format or self.format
+        quality = self.quality if quality is None else quality
+
+        if format is None:
+            raise ValueError("This AEI has no compression format specified. Set self.format, or specify the format in the self.toFile.format kwarg")
+
+        fp = io.BytesIO() if fp is None else fp
+
+        # AEIs must contain at least one texture
+        if tempTexture := (len(self.textures) == 0):
+            self.addTexture(None, Texture(0, 0, self.width, self.height))
+
+        self._writeHeaderMeta(fp, format)
+        self._writeImageContent(fp, format, quality)
+        self._writeSymbols(fp)
+        self._writeFooterMeta(fp, quality)
+
+        if tempTexture:
+            self.removeTexture(0, 0, self.width, self.height)
+
+        return fp
+    
+    
     def _writeHeaderMeta(self, fp: io.BytesIO, format: CompressionFormat):
         fp.write(FILE_TYPE_HEADER)
-        fp.write(binaryio.intToBytes(format.value))
+        fp.write(binaryio.uint8(format.value, ENDIANNESS))
 
         def writeUInt16(*values: int):
             for v in values:
@@ -308,11 +315,8 @@ class AEI:
     def _writeImageContent(self, fp: io.BytesIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
         imageCodec = codec.compressorFor(format)
 
-        imageOps.switchRGBA_BGRA(self._image)
-
-        compressed = imageCodec.compress(self._image, format, quality)
-
-        imageOps.switchRGBA_BGRA(self._image)
+        with imageOps.switchRGBA_BGRA(self._image) as swapped:
+            compressed = imageCodec.compress(swapped, format, quality)
 
         # image length only appears in compressed AEIs
         if format.isCompressed:
@@ -323,12 +327,13 @@ class AEI:
 
     def _writeSymbols(self, fp: io.BytesIO):
         #TODO: Unimplemented
+        fp.write(binaryio.uint16(0, ENDIANNESS)) # number of symbol groups
         ...
 
 
     def _writeFooterMeta(self, fp: io.BytesIO, quality: Optional[CompressionQuality]):
         if quality is not None:
-            fp.write(binaryio.intToBytes(quality))
+            fp.write(binaryio.uint8(quality, ENDIANNESS))
 
 
     def close(self):
@@ -340,7 +345,7 @@ class AEI:
     def __enter__(self):
         """This method is called when entering a `with` statement.
         """
-        pass
+        return self
 
 
     def __exit__(self, exceptionType: Type[TException], exception: TException, trace: TracebackType):

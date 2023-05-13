@@ -6,8 +6,8 @@ from PIL.Image import Image
 from .constants import CompressionFormat, CompressionQuality
 
 class ImageCodecAdaptor(ABC):
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def compress(cls, im: Image, format: CompressionFormat, quality: Optional[CompressionQuality]) -> bytes:
         """Compress a BGRA image into format `format`, with quality `quality`
 
@@ -23,8 +23,8 @@ class ImageCodecAdaptor(ABC):
         raise NotImplementedError()
 
 
-    @abstractmethod
     @classmethod
+    @abstractmethod
     def decompress(cls, fp: BytesIO, format: CompressionFormat) -> Image:
         """Decompress a `format`-compressed BGRA image into a BGRA Image.
 
