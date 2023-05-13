@@ -2,6 +2,7 @@ from io import BytesIO
 
 from PIL.Image import Image
 from AEPi import AEI, Texture, CompressionFormat
+from AEPi.codecs import EtcPakCodec
 from AEPi.codec import ImageCodecAdaptor, supportsFormats
 import pytest
 from PIL import Image
@@ -36,7 +37,7 @@ class MockCodec(ImageCodecAdaptor):
         return COMPRESSED
     
     @classmethod
-    def decompress(cls, fp, format):
+    def decompress(cls, fp, format, quality):
         return DECOMPRESSED
 
 #region dimensions
@@ -117,7 +118,7 @@ def test_getHeight_getsHeight():
         assert aei.height == 5
 
 #endregion dimensions
-#region write
+#region aei files
 
 def test_write_isCorrect():
     with AEI(DECOMPRESSED) as aei, BytesIO() as outBytes, open(PIXEL_AEI_PATH, "rb") as expected:
@@ -127,7 +128,26 @@ def test_write_isCorrect():
         actualText = outBytes.read()
         assert expectedText == actualText
 
-#endregion write
+
+def test_read_readsImage():
+    with AEI.read(SMILEY_AEI_PATH) as aei, Image.open(SMILEY_PNG_PATH) as png:
+        assert aei.width == png.width
+        assert aei.height == png.height
+
+        for x in range(png.width):
+            for y in range(png.height):
+                assert aei._image.getpixel((x, y)) == png.getpixel((x, y))
+
+
+def test_read_readsTextures():
+    with AEI.read(SMILEY_AEI_PATH) as aei, Image.open(SMILEY_PNG_PATH) as png:
+        assert aei.textures[0].x == 0
+        assert aei.textures[0].y == 0
+        assert aei.textures[0].width == png.width
+        assert aei.textures[0].height == png.height
+
+
+#endregion aei files
 #region textures
 
 def test_addTexture_addsTexture():

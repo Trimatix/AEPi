@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from io import BytesIO
 from typing import Dict, Optional, Type, TypeVar, Iterable
 from PIL.Image import Image
 
@@ -25,11 +24,11 @@ class ImageCodecAdaptor(ABC):
 
     @classmethod
     @abstractmethod
-    def decompress(cls, fp: BytesIO, format: CompressionFormat) -> Image:
+    def decompress(cls, fp: bytes, format: CompressionFormat, quality: Optional[CompressionQuality]) -> Image:
         """Decompress a `format`-compressed BGRA image into a BGRA Image.
 
         :param fp: The compressed image to decompress
-        :type im: BytesIO
+        :type im: bytes
         :param format: The compression format
         :type format: CompressionFormat
         :return: `fp`, decompressed into a BGRA image

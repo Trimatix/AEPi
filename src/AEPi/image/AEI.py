@@ -1,7 +1,7 @@
 import io
 from os import PathLike
 from types import TracebackType
-from typing import List, Optional, Set, Tuple, Type, TypeVar, Union, overload
+from typing import List, Optional, Set, Tuple, Type, TypeVar, Union, cast, overload
 from PIL import Image
 
 from ..lib import binaryio, imageOps
@@ -279,11 +279,71 @@ class AEI:
         :return: A new AEI file object, containing the decoded contents of `fp`
         :rtype: AEI
         """
-        # if tempFp := (not isinstance(fp, io.BytesIO)):
-        #     fp = open(fp, "rb")
-        raise NotImplementedError()
-        # if tempFp:
-        #     fp.close()
+        file: Union[io.BufferedReader, io.BytesIO]
+
+        if tempFp := (not isinstance(fp, io.BytesIO)):
+            file = open(fp, "rb")
+
+        if isinstance(fp, io.StringIO):
+            raise ValueError("fp must be of binary type, not StringIO")
+
+        elif isinstance(fp, (str, PathLike)):
+            file = open(fp, mode="rb")
+
+        else:
+            file = fp
+
+        def readInt(length: int):
+            binary = file.read(length)
+            return int.from_bytes(binary)
+
+        bFileType = file.read(len(FILE_TYPE_HEADER))
+        if bFileType != FILE_TYPE_HEADER:
+            raise ValueError(f"Given file is of unknown type '{str(bFileType, encoding='utf-8')}' expected '{str(FILE_TYPE_HEADER, encoding='utf-8')}'")
+
+        formatId = readInt(1)
+        format = CompressionFormat(formatId)
+        imageCodec = codec.decompressorFor(format)
+
+        width = readInt(2)
+        height = readInt(2)
+        numTextures = readInt(2)
+
+        textures: List[Texture] = []
+        for i in range(numTextures):
+            texX = readInt(2)
+            texY = readInt(2)
+            texWidth = readInt(2)
+            texHeight = readInt(2)
+            textures.append(Texture(texX, texY, texWidth, texHeight))
+
+        if format.isCompressed:
+            imageLength = readInt(4)
+        else:
+            imageLength = 4 * width * height
+
+        compressed = file.read(imageLength)
+
+        symbolGroups = readInt(2)
+
+        if symbolGroups > 0:
+            if tempFp:
+                file.close()
+            raise ValueError("AEIs with symbols are not yet supported")
+        
+        bQuality = file.read(1)
+        quality = None if bQuality == b'' else cast(CompressionQuality, int.from_bytes(bQuality)) 
+
+        decompressed = imageCodec.decompress(compressed, format, quality)
+
+        if tempFp:
+            file.close()
+
+        aei = AEI(decompressed, format=format, quality=quality)
+        for tex in textures:
+            aei.addTexture(tex)
+
+        return aei
     
 
     def write(self, fp: Optional[io.BytesIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> io.BytesIO:
