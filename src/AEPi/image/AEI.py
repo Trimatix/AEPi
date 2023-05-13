@@ -132,20 +132,56 @@ class AEI:
         return texture
 
 
-    def addTexture(self, image: Optional[Image.Image], texture: Texture):
-        """Add a texture to this AEI.
-        If an image is provided, it will be added to the underlying image. Otherwise, no change is made.
-        This only really useful for creating overlapping textures.
+    @overload
+    def addTexture(self, texture: Texture, /):
+        """Add only a texture bounding box to this AEI. Use the overload with `Image` as the first parameter to add image content.
+        This overload is only really useful for creating overlapping textures.
+
+        :param texture: The new texture
+        :type texture: Texture
+        :raises ValueError: If the `texture` falls out of bounds of the AEI
+        """
+    
+    @overload
+    def addTexture(self, x: int, y: int, width: int, height: int, /):
+        """Add only a texture bounding box to this AEI. Use the overload with `Image` as the first parameter to add image content.
+        This overload is only really useful for creating overlapping textures.
+
+        :param int x: The x-coordinate of the texture
+        :param int y: The y-coordinate of the texture
+        :param int width: The width of the texture
+        :param int height: The height of the texture
+        :raises ValueError: If the the bounding box falls out of bounds of the AEI
+        """
+
+    @overload
+    def addTexture(self, image: Image.Image, x: int, y: int, /):
+        """Add a texture with image content to this AEI.
         `image` is not retained, and can be closed after passing to this method without side effects.
 
         :param image: The new image
         :type image: Image.Image
-        :param texture: The new texture
-        :type texture: Texture
+        :param int x: The x-coordinate of the texture
+        :param int y: The y-coordinate of the texture
         :raises ValueError: If `image.mode` is not `RGBA`
-        :raises ValueError: If the `texture` falls out of bounds of the AEI
-        :raises ValueError: If the dimensions in `texture` do not match the dimensions of `image`
+        :raises ValueError: If the bounding box falls out of bounds of the AEI
         """
+
+    def addTexture(self, val1: Union[Image.Image, Texture, int], val2: Optional[int] = None, val3: Optional[int] = None, val4: Optional[int] = None, /):
+        if isinstance(val1, Texture):
+            image = None
+            texture = val1
+        elif isinstance(val1, int):
+            if val2 is None or val3 is None or val4 is None:
+                raise ValueError("All of x, y, width and height are required")
+            image = None
+            texture = Texture(val1, val2, val3, val4)
+        elif val2 is None or val3 is None:
+            raise ValueError("Both x and y are required")
+        else:
+            image = val1
+            texture = Texture(val2, val3, image.width, image.height) 
+
         existingTexture = self._findTextureByBox(texture)
         if existingTexture is not None:
             raise ValueError("A texture already exists with the given bounding box")
@@ -274,7 +310,7 @@ class AEI:
 
         # AEIs must contain at least one texture
         if tempTexture := (len(self.textures) == 0):
-            self.addTexture(None, Texture(0, 0, self.width, self.height))
+            self.addTexture(Texture(0, 0, self.width, self.height))
 
         self._writeHeaderMeta(fp, format)
         self._writeImageContent(fp, format, quality)

@@ -81,16 +81,20 @@ with AEI.read("path/to/file.aei") as aei:
 #### Create a new AEI
 
 ```py
-from AEPi import AEI, Texture, CompressionFormat,
+from AEPi import AEI, CompressionFormat,
 from PIL import Image
 
-image_path = "ship-texture.jpg"
+image_path = "ship-texture.png"
+image2_path = "another-texture.png"
 
 # create a new .aei file
-with Image.open(image_path) as image:
+with Image.open(image_path) as image, Image.open(image2_path) as image2:
   # Images are always assumed to be RGBA, not BGRA
-  with AEI(textures=[Texture(image, 0, 0)]) as new_aei:
-    ...
+  with AEI(image) as new_aei:
+    # 'textures' - image bounding boxes
+    new_aei.addTexture(image2, 0, 0)
+    # The below operation is legal, but would leave unused image content in the AEI!
+    new_aei.removeTexture(0, 0, image2.width, image2.height, clearImage=False)
 ```
 
 #### Write a new AEI file to disk
