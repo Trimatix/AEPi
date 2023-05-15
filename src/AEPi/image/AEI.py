@@ -332,7 +332,7 @@ class AEI:
             raise ValueError("AEIs with symbols are not yet supported")
         
         bQuality = file.read(1)
-        quality = None if bQuality == b'' else cast(CompressionQuality, int.from_bytes(bQuality)) 
+        quality = None if bQuality == b'' else cast(CompressionQuality, int.from_bytes(bQuality, byteorder="little")) 
 
         decompressed = imageCodec.decompress(compressed, format, quality)
 
@@ -382,6 +382,7 @@ class AEI:
 
         return fp
     
+#region write-util
     
     def _writeHeaderMeta(self, fp: io.BytesIO, format: CompressionFormat):
         fp.write(FILE_TYPE_HEADER)
@@ -431,6 +432,7 @@ class AEI:
         if quality is not None:
             fp.write(binaryio.uint8(quality, ENDIANNESS))
 
+#endregion write-util
 
     def close(self):
         """Close the underlying image.
