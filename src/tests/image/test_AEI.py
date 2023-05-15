@@ -130,21 +130,21 @@ def test_write_isCorrect():
 
 
 def test_read_readsImage():
-    with AEI.read(SMILEY_AEI_PATH) as aei, Image.open(SMILEY_PNG_PATH) as png:
-        assert aei.width == png.width
-        assert aei.height == png.height
+    with AEI.read(PIXEL_AEI_PATH) as aei:
+        assert aei.width == DECOMPRESSED.width
+        assert aei.height == DECOMPRESSED.height
 
-        for x in range(png.width):
-            for y in range(png.height):
-                assert aei._image.getpixel((x, y)) == png.getpixel((x, y))
+        for x in range(DECOMPRESSED.width):
+            for y in range(DECOMPRESSED.height):
+                assert aei._image.getpixel((x, y)) == DECOMPRESSED.getpixel((x, y))
 
 
 def test_read_readsTextures():
-    with AEI.read(SMILEY_AEI_PATH) as aei, Image.open(SMILEY_PNG_PATH) as png:
+    with AEI.read(PIXEL_AEI_PATH) as aei:
         assert aei.textures[0].x == 0
         assert aei.textures[0].y == 0
-        assert aei.textures[0].width == png.width
-        assert aei.textures[0].height == png.height
+        assert aei.textures[0].width == DECOMPRESSED.width
+        assert aei.textures[0].height == DECOMPRESSED.height
 
 
 #endregion aei files

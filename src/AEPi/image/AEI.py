@@ -295,7 +295,7 @@ class AEI:
 
         def readInt(length: int):
             binary = file.read(length)
-            return int.from_bytes(binary)
+            return int.from_bytes(binary, byteorder="little")
 
         bFileType = file.read(len(FILE_TYPE_HEADER))
         if bFileType != FILE_TYPE_HEADER:
@@ -310,7 +310,7 @@ class AEI:
         numTextures = readInt(2)
 
         textures: List[Texture] = []
-        for i in range(numTextures):
+        for _ in range(numTextures):
             texX = readInt(2)
             texY = readInt(2)
             texWidth = readInt(2)
