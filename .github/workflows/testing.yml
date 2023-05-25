@@ -86,16 +86,16 @@ jobs:
         echo $BRANCH_NAME
         # process.env.BRANCH = 'pull_27';
         echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
-    # - name: Create test coverage Badge
-    #   uses: schneegans/dynamic-badges-action@v1.0.0
-    #   with:
-    #     auth: ${{ secrets.GIST_SECRET }}
-    #     gistID: 2551cac90336c1d1073d8615407cc72d
-    #     filename: AEPi__${{ env.BRANCH }}.json
-    #     label: test coverage
-    #     message: ${{ env.COVERAGE }}
-    #     color: green
-    #     namedLogo: jest
+    - name: Create test coverage Badge
+      uses: schneegans/dynamic-badges-action@v1.0.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: 8a5430ecc0f87b003367174b1521f3bb
+        filename: AEPi__${{ env.BRANCH }}.json
+        label: test coverage
+        message: ${{ env.COVERAGE }}
+        color: green
+        namedLogo: jest
     - name: Comment on pull request with test coverage
       uses: coroo/pytest-coverage-commentator@v1.0.2
       with:
