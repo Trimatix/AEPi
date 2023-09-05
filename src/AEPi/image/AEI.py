@@ -1,4 +1,5 @@
 import io
+from typing import BinaryIO
 from os import PathLike
 from types import TracebackType
 from typing import List, Optional, Set, Tuple, Type, TypeVar, Union, overload
@@ -286,7 +287,7 @@ class AEI:
         #     fp.close()
     
 
-    def write(self, fp: Optional[io.BytesIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> io.BytesIO:
+    def write(self, fp: Optional[BinaryIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> BinaryIO:
         """Write this AEI to a BytesIO file.
 
         :param fp: Optional file to write to. If not given, a new one is created. defaults to None
@@ -323,7 +324,7 @@ class AEI:
         return fp
     
     
-    def _writeHeaderMeta(self, fp: io.BytesIO, format: CompressionFormat):
+    def _writeHeaderMeta(self, fp: BinaryIO, format: CompressionFormat):
         fp.write(FILE_TYPE_HEADER)
         fp.write(binaryio.uint8(format.value, ENDIANNESS))
 
@@ -348,7 +349,7 @@ class AEI:
             )
     
 
-    def _writeImageContent(self, fp: io.BytesIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
+    def _writeImageContent(self, fp: BinaryIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
         imageCodec = codec.compressorFor(format)
 
         with imageOps.switchRGBA_BGRA(self._image) as swapped:
@@ -361,13 +362,13 @@ class AEI:
         fp.write(compressed)
 
 
-    def _writeSymbols(self, fp: io.BytesIO):
+    def _writeSymbols(self, fp: BinaryIO):
         #TODO: Unimplemented
         fp.write(binaryio.uint16(0, ENDIANNESS)) # number of symbol groups
         ...
 
 
-    def _writeFooterMeta(self, fp: io.BytesIO, quality: Optional[CompressionQuality]):
+    def _writeFooterMeta(self, fp: BinaryIO, quality: Optional[CompressionQuality]):
         if quality is not None:
             fp.write(binaryio.uint8(quality, ENDIANNESS))
 
