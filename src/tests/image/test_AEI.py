@@ -140,8 +140,6 @@ def test_write_twoTextures_isCorrect():
         with AEI(png) as aei, BytesIO() as outBytes:
             aei.addTexture(0, 0, 8, 8)
             aei.addTexture(8, 8, 8, 8)
-            with open("TESTOUT2.aei", "wb") as f:
-                aei.write(f, format=CompressionFormat.ATC, quality=3)
             aei.write(outBytes, format=CompressionFormat.ATC, quality=3)
             expectedText = expected.read()
             outBytes.seek(0)
