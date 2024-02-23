@@ -1,7 +1,7 @@
 from io import BytesIO
 
 from PIL.Image import Image
-from AEPi import AEI, Texture, CompressionFormat, CompressionQuality
+from AEPi import AEI, Texture, CompressionFormat
 from AEPi.codec import ImageCodecAdaptor, supportsFormats
 import pytest
 from PIL import Image
@@ -28,20 +28,20 @@ def smileyImage():
     
     return png
 
-USE_SMILEY = False
+g_useSmiley = False
 
 @supportsFormats(
     both=[CompressionFormat.ATC]
 )
 class MockCodec(ImageCodecAdaptor):
     @classmethod
-    def compress(cls, im, format, quality):
-        if USE_SMILEY:
+    def compress(cls, im, format, quality): # type: ignore[reportMissingParameterType]
+        if g_useSmiley:
             return COMPRESSED_SMILEY_ATC
         return COMPRESSED
     
     @classmethod
-    def decompress(cls, fp, format):
+    def decompress(cls, fp, format): # type: ignore[reportMissingParameterType]
         return DECOMPRESSED
 
 #region dimensions
@@ -134,8 +134,8 @@ def test_write_isCorrect():
 
 
 def test_write_twoTextures_isCorrect():
-    global USE_SMILEY
-    USE_SMILEY = True
+    global g_useSmiley
+    g_useSmiley = True
     with smileyImage() as png, open(SMILEY_AEI_2TEXTURES_PATH, "rb") as expected:
         with AEI(png) as aei, BytesIO() as outBytes:
             aei.addTexture(0, 0, 8, 8)
@@ -145,7 +145,7 @@ def test_write_twoTextures_isCorrect():
             outBytes.seek(0)
             actualText = outBytes.read()
             assert expectedText == actualText
-    USE_SMILEY = False
+    g_useSmiley = False
 
 #endregion write
 #region textures
@@ -164,7 +164,7 @@ def test_addTexture_withImage_addsImage():
         aei.addTexture(png, 0, 0)
         for x in range(png.width):
             for y in range(png.height):
-                assert aei._image.getpixel((x, y)) == png.getpixel((x, y))
+                assert aei._image.getpixel((x, y)) == png.getpixel((x, y)) # type: ignore[reportUnknownMemberType]
 
 
 def test_addTexture_conflict_raises():
@@ -199,7 +199,7 @@ def test_removeTexture_clearImage_clearsImage():
     with Image.new("RGBA", (1, 1), (255, 255, 255, 255)) as png, AEI((1, 1)) as aei:
         aei.addTexture(png, 0, 0)
         aei.removeTexture(0, 0, 1, 1, clearImage=True)
-        assert aei._image.getpixel((0, 0)) == (0, 0, 0, 0)
+        assert aei._image.getpixel((0, 0)) == (0, 0, 0, 0) # type: ignore[reportUnknownMemberType]
 
 
 def test_removeTexture_unknown_raises():
@@ -218,7 +218,7 @@ def test_replaceTexture_replacesTexture():
     with Image.new("RGBA", (1, 1), (100, 100, 100, 100)) as png, Image.new("RGBA", (1, 1), (255, 255, 255, 255)) as newPng, AEI((1, 1)) as aei:
         aei.addTexture(png, 0, 0)
         aei.replaceTexture(newPng, Texture(0, 0, 1, 1))
-        assert aei._image.getpixel((0, 0)) == (255, 255, 255, 255)
+        assert aei._image.getpixel((0, 0)) == (255, 255, 255, 255) # type: ignore[reportUnknownMemberType]
         
 
 def test_replaceTexture_unknown_raises():
@@ -250,7 +250,7 @@ def test_getTexture_getsTexture():
     with Image.new("RGBA", (1, 1), (255, 255, 255, 255)) as png, AEI((16, 16)) as aei:
         aei.addTexture(png, 0, 0)
         actual = aei.getTexture(0, 0, 1, 1)
-        assert actual.getpixel((0, 0)) == (255, 255, 255, 255)
+        assert actual.getpixel((0, 0)) == (255, 255, 255, 255) # type: ignore[reportUnknownMemberType]
 
 
 def test_getTexture_outOfBounds_raises():

@@ -1,5 +1,5 @@
 import io
-from typing import BinaryIO
+from typing import Any, BinaryIO
 from os import PathLike
 from types import TracebackType
 from typing import List, Optional, Set, Tuple, Type, TypeVar, Union, overload
@@ -32,10 +32,10 @@ class AEI:
     the AEI will attempt to close all images, and swallow any errors encountered.
     """
     @overload
-    def __init__(self, shape: Tuple[int, int], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None): ...
+    def __init__(self, shape: Tuple[int, int], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> None: ...
     
     @overload
-    def __init__(self, image: Image.Image, /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None): ...
+    def __init__(self, image: Image.Image, /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> None: ...
 
     def __init__(self, val1: Union[Image.Image, Tuple[int, int]], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None):
         self._textures: List[Texture] = []
@@ -134,7 +134,7 @@ class AEI:
 
 
     @overload
-    def addTexture(self, texture: Texture, /):
+    def addTexture(self, texture: Texture, /) -> None:
         """Add only a texture bounding box to this AEI. Use the overload with `Image` as the first parameter to add image content.
         This overload is only really useful for creating overlapping textures.
 
@@ -144,7 +144,7 @@ class AEI:
         """
     
     @overload
-    def addTexture(self, x: int, y: int, width: int, height: int, /):
+    def addTexture(self, x: int, y: int, width: int, height: int, /) -> None:
         """Add only a texture bounding box to this AEI. Use the overload with `Image` as the first parameter to add image content.
         This overload is only really useful for creating overlapping textures.
 
@@ -156,7 +156,7 @@ class AEI:
         """
 
     @overload
-    def addTexture(self, image: Image.Image, x: int, y: int, /):
+    def addTexture(self, image: Image.Image, x: int, y: int, /) -> None:
         """Add a texture with image content to this AEI.
         `image` is not retained, and can be closed after passing to this method without side effects.
 
@@ -227,10 +227,10 @@ class AEI:
 
 
     @overload
-    def removeTexture(self, texture: Texture, /, *, clearImage: Optional[bool] = None): ...
+    def removeTexture(self, texture: Texture, /, *, clearImage: Optional[bool] = None) -> None: ...
 
     @overload
-    def removeTexture(self, x: int, y: int, width: int, height: int, /, *, clearImage: Optional[bool] = None): ...
+    def removeTexture(self, x: int, y: int, width: int, height: int, /, *, clearImage: Optional[bool] = None) -> None: ...
 
     def removeTexture(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None, /, *, clearImage: Optional[bool] = None):
         """Remove a texture from this AEI, by its bounding box.
@@ -271,7 +271,7 @@ class AEI:
 
 
     @classmethod
-    def read(cls, fp: Union[str, PathLike, io.BytesIO]) -> "AEI":
+    def read(cls, fp: Union[str, PathLike[Any], io.BytesIO]) -> "AEI":
         """Read an AEI file from bytes, or a file.
         `fp` can be a path to a file, or an in-memory buffer containing the contents of an encoded AEI file, including metadata.
 
