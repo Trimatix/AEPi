@@ -1,10 +1,12 @@
 import io
+from typing import BinaryIO
 from os import PathLike
 from types import TracebackType
 from typing import Any, List, Optional, Set, Tuple, Type, TypeVar, Union, cast, overload
 from PIL import Image
 
-from ..lib import binaryio, imageOps
+from ..lib import imageOps
+from ..lib.binaryio import uint8, uint16, uint32, readUInt8, readUInt16, readUInt32
 
 from ..constants import CompressionFormat, FILE_TYPE_HEADER, ENDIANNESS, CompressionQuality
 from .. import codec
@@ -291,45 +293,41 @@ class AEI:
         else:
             file = fp
 
-        def readInt(length: int):
-            binary = file.read(length)
-            return int.from_bytes(binary, byteorder="little")
-
         try:
             bFileType = file.read(len(FILE_TYPE_HEADER))
             if bFileType != FILE_TYPE_HEADER:
                 raise ValueError(f"Given file is of unknown type '{str(bFileType, encoding='utf-8')}' expected '{str(FILE_TYPE_HEADER, encoding='utf-8')}'")
 
-            formatId = readInt(1)
+            formatId = readUInt8(file, ENDIANNESS)
             format = CompressionFormat(formatId)
             imageCodec = codec.decompressorFor(format)
 
-            width = readInt(2)
-            height = readInt(2)
-            numTextures = readInt(2)
+            width = readUInt16(file, ENDIANNESS)
+            height = readUInt16(file, ENDIANNESS)
+            numTextures = readUInt16(file, ENDIANNESS)
 
             textures: List[Texture] = []
             for _ in range(numTextures):
-                texX = readInt(2)
-                texY = readInt(2)
-                texWidth = readInt(2)
-                texHeight = readInt(2)
+                texX = readUInt16(file, ENDIANNESS)
+                texY = readUInt16(file, ENDIANNESS)
+                texWidth = readUInt16(file, ENDIANNESS)
+                texHeight = readUInt16(file, ENDIANNESS)
                 textures.append(Texture(texX, texY, texWidth, texHeight))
 
             if format.isCompressed:
-                imageLength = readInt(4)
+                imageLength = readUInt32(file, ENDIANNESS)
             else:
                 imageLength = 4 * width * height
 
             compressed = file.read(imageLength)
 
-            symbolGroups = readInt(2)
+            symbolGroups = readUInt16(file, ENDIANNESS)
 
             if symbolGroups > 0:
                 raise ValueError("AEIs with symbols are not yet supported")
             
-            bQuality = file.read(1)
-            quality = None if bQuality == b'' else cast(CompressionQuality, int.from_bytes(bQuality, byteorder="little")) 
+            bQuality = readUInt8(file, ENDIANNESS, None)
+            quality = cast(Optional[CompressionQuality], bQuality) 
 
             decompressed = imageCodec.decompress(compressed, format, quality)
 
@@ -344,7 +342,7 @@ class AEI:
         return aei
     
 
-    def write(self, fp: Optional[io.BytesIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> io.BytesIO:
+    def write(self, fp: Optional[BinaryIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> BinaryIO:
         """Write this AEI to a BytesIO file.
 
         :param fp: Optional file to write to. If not given, a new one is created. defaults to None
@@ -382,13 +380,13 @@ class AEI:
     
 #region write-util
     
-    def _writeHeaderMeta(self, fp: io.BytesIO, format: CompressionFormat):
+    def _writeHeaderMeta(self, fp: BinaryIO, format: CompressionFormat):
         fp.write(FILE_TYPE_HEADER)
-        fp.write(binaryio.uint8(format.value, ENDIANNESS))
+        fp.write(uint8(format.value, ENDIANNESS))
 
         def writeUInt16(*values: int):
             for v in values:
-                fp.write(binaryio.uint16(v, ENDIANNESS))
+                fp.write(uint16(v, ENDIANNESS))
 
         # AEI dimensions and texture count
         writeUInt16(
@@ -407,7 +405,7 @@ class AEI:
             )
     
 
-    def _writeImageContent(self, fp: io.BytesIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
+    def _writeImageContent(self, fp: BinaryIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
         imageCodec = codec.compressorFor(format)
 
         with imageOps.switchRGBA_BGRA(self._image) as swapped:
@@ -415,20 +413,20 @@ class AEI:
 
         # image length only appears in compressed AEIs
         if format.isCompressed:
-            fp.write(binaryio.uint32(len(compressed), ENDIANNESS))
+            fp.write(uint32(len(compressed), ENDIANNESS))
 
         fp.write(compressed)
 
 
-    def _writeSymbols(self, fp: io.BytesIO):
+    def _writeSymbols(self, fp: BinaryIO):
         #TODO: Unimplemented
-        fp.write(binaryio.uint16(0, ENDIANNESS)) # number of symbol groups
+        fp.write(uint16(0, ENDIANNESS)) # number of symbol groups
         ...
 
 
-    def _writeFooterMeta(self, fp: io.BytesIO, quality: Optional[CompressionQuality]):
+    def _writeFooterMeta(self, fp: BinaryIO, quality: Optional[CompressionQuality]):
         if quality is not None:
-            fp.write(binaryio.uint8(quality, ENDIANNESS))
+            fp.write(uint8(quality, ENDIANNESS))
 
 #endregion write-util
 

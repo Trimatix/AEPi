@@ -2,14 +2,13 @@ from io import BytesIO
 
 from PIL.Image import Image
 from AEPi import AEI, Texture, CompressionFormat
-from AEPi.codecs import EtcPakCodec
 from AEPi.codec import ImageCodecAdaptor, supportsFormats
 import pytest
 from PIL import Image
 
 from AEPi.constants import CompressionFormat
 
-SMILEY_AEI_PATH = "src/tests/assets/smiley_DXT5_nomipmap_nosymbols_high.aei"
+SMILEY_AEI_2TEXTURES_PATH = "src/tests/assets/smiley_ATC_twotextures_nomipmap_nosymbols_high.aei"
 SMILEY_PNG_PATH = "src/tests/assets/smiley.png"
 
 PIXEL_AEI_PATH = "src/tests/assets/pixel_ATC_nomipmap_nosymbols_high.aei"
@@ -17,6 +16,8 @@ PIXEL_AEI_PATH = "src/tests/assets/pixel_ATC_nomipmap_nosymbols_high.aei"
 DECOMPRESSED = Image.new("RGBA", (1, 1), (100, 200, 200, 255))
 # This is the RGBA pixel from DECOMPRESSED, compressed to ATC 4bpp using AEIEditor.
 COMPRESSED = b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\x58\x66\xFF\xFF\xFF\xFF"
+# This is the smiley image compressed to ATC 4bpp, using AEIEditor.
+COMPRESSED_SMILEY_ATC = b"\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xF7\x20\xFF\xFF\x00\x55\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xF7\x20\xFF\xFF\x00\x55\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xF7\x20\xFF\xFF\x00\x55\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xF7\x20\xFF\xFF\x00\xD5\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFC\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xCF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\x3F\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xE7\xD0\xFF\xFF\xFF\xFF\xFF\xA8\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xF3\xFC\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xE7\x54\xFF\xFF\x03\xC3\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x00\x00\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\xFF\x87\x25\xFF\xFF\xFF\xFF\x3F\x00"
 
 
 def smileyImage():
@@ -27,6 +28,7 @@ def smileyImage():
     
     return png
 
+USE_SMILEY = False
 
 @supportsFormats(
     both=[CompressionFormat.ATC]
@@ -34,6 +36,8 @@ def smileyImage():
 class MockCodec(ImageCodecAdaptor):
     @classmethod
     def compress(cls, im, format, quality):
+        if USE_SMILEY:
+            return COMPRESSED_SMILEY_ATC
         return COMPRESSED
     
     @classmethod
@@ -148,6 +152,22 @@ def test_read_readsTextures():
 
 
 #endregion aei files
+        
+def test_write_twoTextures_isCorrect():
+    global USE_SMILEY
+    USE_SMILEY = True
+    with smileyImage() as png, open(SMILEY_AEI_2TEXTURES_PATH, "rb") as expected:
+        with AEI(png) as aei, BytesIO() as outBytes:
+            aei.addTexture(0, 0, 8, 8)
+            aei.addTexture(8, 8, 8, 8)
+            aei.write(outBytes, format=CompressionFormat.ATC, quality=3)
+            expectedText = expected.read()
+            outBytes.seek(0)
+            actualText = outBytes.read()
+            assert expectedText == actualText
+    USE_SMILEY = False
+
+#endregion write
 #region textures
 
 def test_addTexture_addsTexture():
