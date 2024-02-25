@@ -2,33 +2,34 @@ from typing import Type
 from AEPi.codec import ImageCodecAdaptor, supportsFormats, compressorFor, decompressorFor
 from AEPi.constants import CompressionFormat
 import pytest
+from PIL.Image import Image
 
 
 @supportsFormats(compresses=[CompressionFormat.DXT5])
 class Dxt5Compressor(ImageCodecAdaptor):
     @classmethod
-    def compress(cls, im, format, quality): pass
+    def compress(cls, im, format, quality): return b''
     
     @classmethod
-    def decompress(cls, fp, format): pass
+    def decompress(cls, fp, format, width, height, quality): return Image()
 
 
 @supportsFormats(decompresses=[CompressionFormat.ETC1])
 class Etc1Decompressor(ImageCodecAdaptor):
     @classmethod
-    def compress(cls, im, format, quality): pass
+    def compress(cls, im, format, quality): return b''
     
     @classmethod
-    def decompress(cls, fp, format): pass
+    def decompress(cls, fp, format, width, height, quality): return Image()
 
 
 @supportsFormats(both=[CompressionFormat.PVRTCI2A])
 class PvrCodec(ImageCodecAdaptor):
     @classmethod
-    def compress(cls, im, format, quality): pass
+    def compress(cls, im, format, quality): return b''
     
     @classmethod
-    def decompress(cls, fp, format): pass
+    def decompress(cls, fp, format, width, height, quality): return Image()
 
 
 @pytest.mark.parametrize(("format", "codec"),

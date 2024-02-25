@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import Literal
+from AEPi.lib.binaryio import Endianness
 
 class CompressionFormat(Enum):
     """Compression formats.
@@ -27,5 +28,5 @@ class CompressionFormat(Enum):
         )
 
 FILE_TYPE_HEADER = b"AEimage\x00"
-ENDIANNESS = "<"
+ENDIANNESS = Endianness("little", "<")
 CompressionQuality = Literal[1, 2, 3]
