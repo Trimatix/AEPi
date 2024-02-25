@@ -17,6 +17,16 @@ class Texture:
         :rtype: Tuple[int, int]
         """
         return (self.width, self.height)
+    
+
+    @size.setter
+    def size(self, value: Tuple[int, int]) -> None:
+        """Set the shape of the texture region.
+
+        :param value: The shape of the texture region, as a (width, height) tuple
+        :type value: Tuple[int, int]
+        """
+        (self.width, self.height) = value
 
     
     @property
@@ -27,3 +37,13 @@ class Texture:
         :rtype: Tuple[int, int]
         """
         return (self.x, self.y)
+
+    
+    @position.setter
+    def position(self, value: Tuple[int, int]) -> None:
+        """Set the coordinates of the texture region relative to the AEI origin.
+
+        :param value: The coordinates of the texture region, as an (x, y) tuple
+        :type value: Tuple[int, int]
+        """
+        (self.x, self.y) = value
