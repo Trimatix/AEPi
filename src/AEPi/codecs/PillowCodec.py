@@ -2,20 +2,21 @@ from typing import Optional
 from PIL import Image, ImageFile, __version__ as PillowVersion
 from ..codec import ImageCodecAdaptor, supportsFormats
 from ..constants import CompressionFormat, CompressionQuality
+from ..exceptions import DependencyFailedException
 
 try:
     pillowVersionSplit = PillowVersion.split(".")
     if (int(pillowVersionSplit[0]), int(pillowVersionSplit[1])) < (10, 2):
-        raise ImportError("Cannot use extension PIllowCodec as the installed Pillow version is lower than the required 10.2.x")
+        raise DependencyFailedException("PillowCodec", "pillow", None, "installed Pillow version is lower than the required 10.2.x")
 except Exception as ex:
-    if isinstance(ex, ImportError):
+    if not isinstance(ex, DependencyFailedException):
         raise ex
-    raise ImportError("Cannot use extension PIllowCodec as the installed Pillow version could not be determined")
+    raise DependencyFailedException("PillowCodec", "pillow", ex, "installed Pillow version could not be determined")
 
 try:
     from PIL.DdsImagePlugin import DdsRgbDecoder
 except ImportError as ex:
-    raise ImportError("Cannot use extension PIllowCodec as the installed Pillow version does not include the DDS decoder")
+    raise DependencyFailedException("PillowCodec", "pillow", ex, "installed Pillow version does not include the DDS decoder")
 
 
 # The channel configuration
