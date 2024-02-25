@@ -10,7 +10,7 @@ class Texture:
 
     
     @property
-    def size(self) -> Tuple[int, int]:
+    def shape(self) -> Tuple[int, int]:
         """The shape of the texture region, given as a (width, height) tuple.
 
         :return: The shape of the texture region, as a (width, height) tuple
@@ -19,8 +19,8 @@ class Texture:
         return (self.width, self.height)
     
 
-    @size.setter
-    def size(self, value: Tuple[int, int]) -> None:
+    @shape.setter
+    def shape(self, value: Tuple[int, int]) -> None:
         """Set the shape of the texture region.
 
         :param value: The shape of the texture region, as a (width, height) tuple
