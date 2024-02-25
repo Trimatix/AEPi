@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from PIL.Image import Image
 from AEPi import CompressionFormat
 from AEPi.codecs.PillowCodec import PillowCodec
@@ -27,21 +25,21 @@ def smileyImage():
 
 
 def test_decompress_DXT5_succeeds():
-    with smileyImage() as expected, BytesIO(COMPRESSED_DXT5) as compressed:
-        actual = CODEC.decompress(compressed, CompressionFormat.DXT5)
+    with smileyImage() as expected:
+        actual = CODEC.decompress(COMPRESSED_DXT5, CompressionFormat.DXT5, expected.width, expected.height, None)
         for coords in zip(range(expected.width), range(expected.height)):
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
 
 def test_decompress_DXT3_succeeds():
-    with smileyImage() as expected, BytesIO(COMPRESSED_DXT3) as compressed:
-        actual = CODEC.decompress(compressed, CompressionFormat.DXT3)
+    with smileyImage() as expected:
+        actual = CODEC.decompress(COMPRESSED_DXT3, CompressionFormat.DXT3, expected.width, expected.height, None)
         for coords in zip(range(expected.width), range(expected.height)):
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
 
 def test_decompress_DXT1_succeeds():
-    with smileyImage() as expected, BytesIO(COMPRESSED_DXT1) as compressed:
-        actual = CODEC.decompress(compressed, CompressionFormat.DXT1)
+    with smileyImage() as expected:
+        actual = CODEC.decompress(COMPRESSED_DXT1, CompressionFormat.DXT1, expected.width, expected.height, None)
         for coords in zip(range(expected.width), range(expected.height)):
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
