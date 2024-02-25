@@ -16,7 +16,7 @@ except ImportError:
 ])
 class EtcPakCodec(ImageCodecAdaptor):
     @classmethod
-    def compress(cls, im: Image, format: CompressionFormat, quality: CompressionQuality) -> bytes:
+    def compress(cls, im: Image, format: CompressionFormat, quality: Optional[CompressionQuality]) -> bytes:
         if format is CompressionFormat.DXT5:
             if im.mode != "RGBA":
                 im = im.convert("RGBA")

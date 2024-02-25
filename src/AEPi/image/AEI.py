@@ -330,7 +330,7 @@ class AEI:
             bQuality = readUInt8(file, ENDIANNESS, None)
             quality = cast(Optional[CompressionQuality], bQuality) 
 
-            decompressed = imageCodec.decompress(compressed, format, quality)
+            decompressed = imageCodec.decompress(compressed, format, width, height, quality)
 
         finally:
             if tempFp:

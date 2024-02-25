@@ -41,7 +41,7 @@ class MockCodec(ImageCodecAdaptor):
         return COMPRESSED
     
     @classmethod
-    def decompress(cls, fp, format, quality):
+    def decompress(cls, fp, format, width, height, quality):
         if USE_SMILEY:
             return smileyImage()
         return DECOMPRESSED
@@ -159,7 +159,7 @@ def test_read_twoTextures_isCorrect():
 
 
 #endregion read
-#endregion write
+#region write
 
 def test_write_isCorrect():
     with AEI(DECOMPRESSED) as aei, BytesIO() as outBytes, open(PIXEL_AEI_PATH, "rb") as expected:
