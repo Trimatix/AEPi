@@ -29,9 +29,3 @@ class EtcPakCodec(ImageCodecAdaptor):
             return etcpak.compress_to_etc1(im.tobytes(), im.width, im.height) # type: ignore[reportUnknownVariableType]
         
         raise ValueError(f"Codec {EtcPakCodec.__name__} does not support format {format.name}")
-    
-
-    @classmethod
-    def decompress(cls, fp: bytes, format: CompressionFormat, width: int, height: int, quality: Optional[CompressionQuality]) -> Image:
-        raise NotImplementedError(f"Codec {EtcPakCodec.__name__} is not capable of decompression")
-    

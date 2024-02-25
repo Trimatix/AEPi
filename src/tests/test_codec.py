@@ -23,7 +23,7 @@ class Etc1Decompressor(ImageCodecAdaptor):
     def decompress(cls, fp, format, width, height, quality): return Image() # type: ignore[reportMissingParameterType]
 
 
-@supportsFormats(both=[CompressionFormat.PVRTCI2A])
+@supportsFormats(both=[CompressionFormat.PVRTC12A])
 class PvrCodec(ImageCodecAdaptor):
     @classmethod
     def compress(cls, im, format, quality): return b'' # type: ignore[reportMissingParameterType]
@@ -35,7 +35,7 @@ class PvrCodec(ImageCodecAdaptor):
 @pytest.mark.parametrize(("format", "codec"),
                             [
                                 (CompressionFormat.DXT5, Dxt5Compressor),
-                                (CompressionFormat.PVRTCI2A, PvrCodec)
+                                (CompressionFormat.PVRTC12A, PvrCodec)
                             ])
 def test_compressorFor_GetsCorrectCodec(format: CompressionFormat, codec: Type[ImageCodecAdaptor]):
     assert compressorFor(format) is codec
@@ -44,7 +44,7 @@ def test_compressorFor_GetsCorrectCodec(format: CompressionFormat, codec: Type[I
 @pytest.mark.parametrize(("format", "codec"),
                             [
                                 (CompressionFormat.ETC1, Etc1Decompressor),
-                                (CompressionFormat.PVRTCI2A, PvrCodec)
+                                (CompressionFormat.PVRTC12A, PvrCodec)
                             ])
 def test_decompressorFor_GetsCorrectCodec(format: CompressionFormat, codec: Type[ImageCodecAdaptor]):
     assert decompressorFor(format) is codec
@@ -52,4 +52,4 @@ def test_decompressorFor_GetsCorrectCodec(format: CompressionFormat, codec: Type
 
 def test_compressorFor_unknownFormat_throws():
     with pytest.raises(KeyError):
-        compressorFor(CompressionFormat.PVRTCI4A)
+        compressorFor(CompressionFormat.PVRTC14A)
