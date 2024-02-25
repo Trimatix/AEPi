@@ -36,12 +36,16 @@ g_useSmiley = False
 class MockCodec(ImageCodecAdaptor):
     @classmethod
     def compress(cls, im, format, quality): # type: ignore[reportMissingParameterType]
+        global g_useSmiley
         if g_useSmiley:
             return COMPRESSED_SMILEY_ATC
         return COMPRESSED
     
     @classmethod
-    def decompress(cls, fp, format): # type: ignore[reportMissingParameterType]
+    def decompress(cls, fp, format, width, height, quality): # type: ignore[reportMissingParameterType]
+        global g_useSmiley
+        if g_useSmiley:
+            return smileyImage()
         return DECOMPRESSED
 
 #region dimensions
@@ -122,6 +126,41 @@ def test_getHeight_getsHeight():
         assert aei.height == 5
 
 #endregion dimensions
+#region aei files
+#region read
+
+
+def test_read_readsImage():
+    with AEI.read(PIXEL_AEI_PATH) as aei:
+        assert aei.width == DECOMPRESSED.width
+        assert aei.height == DECOMPRESSED.height
+
+        for x in range(DECOMPRESSED.width):
+            for y in range(DECOMPRESSED.height):
+                assert aei._image.getpixel((x, y)) == DECOMPRESSED.getpixel((x, y)) # type: ignore[reportUnknownMemberType]
+
+
+def test_read_readsTextures():
+    with AEI.read(PIXEL_AEI_PATH) as aei:
+        assert aei.textures[0].x == 0
+        assert aei.textures[0].y == 0
+        assert aei.textures[0].width == DECOMPRESSED.width
+        assert aei.textures[0].height == DECOMPRESSED.height
+
+
+def test_read_twoTextures_isCorrect():
+    global g_useSmiley
+    g_useSmiley = True
+    with AEI.read(SMILEY_AEI_2TEXTURES_PATH) as aei:
+        assert len(aei.textures) == 2
+        assert aei.textures[0].shape == (8, 8)
+        assert aei.textures[0].position == (0, 0)
+        assert aei.textures[1].shape == (8, 8)
+        assert aei.textures[1].position == (8, 8)
+    g_useSmiley = False
+
+
+#endregion read
 #region write
 
 def test_write_isCorrect():
@@ -148,6 +187,7 @@ def test_write_twoTextures_isCorrect():
     g_useSmiley = False
 
 #endregion write
+#endregion aei files
 #region textures
 
 def test_addTexture_addsTexture():

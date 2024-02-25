@@ -25,7 +25,6 @@ def smileyImage():
     
     return png
 
-#region dimensions
 
 def test_decompress_DXT5_succeeds():
     with smileyImage() as expected, BytesIO(COMPRESSED_DXT5) as compressed:

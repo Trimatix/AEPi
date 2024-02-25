@@ -1,5 +1,5 @@
 from typing import Optional
-from io import BytesIO
+from typing import Optional
 from PIL.Image import Image
 from ..codec import ImageCodecAdaptor, supportsFormats
 from ..constants import CompressionFormat, CompressionQuality
@@ -32,6 +32,6 @@ class EtcPakCodec(ImageCodecAdaptor):
     
 
     @classmethod
-    def decompress(cls, fp: BytesIO, format: CompressionFormat) -> Image:
+    def decompress(cls, fp: bytes, format: CompressionFormat, width: int, height: int, quality: Optional[CompressionQuality]) -> Image:
         raise NotImplementedError(f"Codec {EtcPakCodec.__name__} is not capable of decompression")
     

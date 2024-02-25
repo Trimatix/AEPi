@@ -2,10 +2,11 @@ import io
 from typing import Any, BinaryIO
 from os import PathLike
 from types import TracebackType
-from typing import List, Optional, Set, Tuple, Type, TypeVar, Union, overload
+from typing import Any, List, Optional, Set, Tuple, Type, TypeVar, Union, cast, overload
 from PIL import Image
 
-from ..lib import binaryio, imageOps
+from ..lib import imageOps
+from ..lib.binaryio import uint8, uint16, uint32, readUInt8, readUInt16, readUInt32
 
 from ..constants import CompressionFormat, FILE_TYPE_HEADER, ENDIANNESS, CompressionQuality
 from .. import codec
@@ -17,11 +18,12 @@ class AEI:
     """An Abyss Engine Image file.
     Contains a set of textures, each with an image and coordinates.
     Each texture must fall within the bounds of the AEI shape.
-    The AEI shape is mutable.
-    `format` and `quality` can be set in the constructor, or on call of `AEI.write`.
+    The AEI shape is mutable, through the `shape` property.
+    The coordinate origin (0, 0) is the top-left of the AEI.
 
     An AEI can be constructed either with its dimensions, or with an image.
     If an image is used, the AEI is created with a copy of the image.
+    `format` and `quality` can be set in the constructor, or on call of `AEI.write`.
 
     Use the `addTexture` and `removeTexture` helper methods for texture management.
 
@@ -280,11 +282,65 @@ class AEI:
         :return: A new AEI file object, containing the decoded contents of `fp`
         :rtype: AEI
         """
-        # if tempFp := (not isinstance(fp, io.BytesIO)):
-        #     fp = open(fp, "rb")
-        raise NotImplementedError()
-        # if tempFp:
-        #     fp.close()
+        if isinstance(fp, io.StringIO):
+            raise ValueError("fp must be of binary type, not StringIO")
+        
+        file: Union[io.BufferedReader, io.BytesIO]
+
+        if tempFp := (not isinstance(fp, io.BytesIO)):
+            file = open(fp, "rb")
+        elif isinstance(fp, (str, PathLike)):
+            file = open(fp, mode="rb")
+        else:
+            file = fp
+
+        try:
+            bFileType = file.read(len(FILE_TYPE_HEADER))
+            if bFileType != FILE_TYPE_HEADER:
+                raise ValueError(f"Given file is of unknown type '{str(bFileType, encoding='utf-8')}' expected '{str(FILE_TYPE_HEADER, encoding='utf-8')}'")
+
+            formatId = readUInt8(file, ENDIANNESS)
+            format = CompressionFormat(formatId)
+            imageCodec = codec.decompressorFor(format)
+
+            width = readUInt16(file, ENDIANNESS)
+            height = readUInt16(file, ENDIANNESS)
+            numTextures = readUInt16(file, ENDIANNESS)
+
+            textures: List[Texture] = []
+            for _ in range(numTextures):
+                texX = readUInt16(file, ENDIANNESS)
+                texY = readUInt16(file, ENDIANNESS)
+                texWidth = readUInt16(file, ENDIANNESS)
+                texHeight = readUInt16(file, ENDIANNESS)
+                textures.append(Texture(texX, texY, texWidth, texHeight))
+
+            if format.isCompressed:
+                imageLength = readUInt32(file, ENDIANNESS)
+            else:
+                imageLength = 4 * width * height
+
+            compressed = file.read(imageLength)
+
+            symbolGroups = readUInt16(file, ENDIANNESS)
+
+            if symbolGroups > 0:
+                raise ValueError("AEIs with symbols are not yet supported")
+            
+            bQuality = readUInt8(file, ENDIANNESS, None)
+            quality = cast(Optional[CompressionQuality], bQuality) 
+
+            decompressed = imageCodec.decompress(compressed, format, width, height, quality)
+
+        finally:
+            if tempFp:
+                file.close()
+
+        aei = AEI(decompressed, format=format, quality=quality)
+        for tex in textures:
+            aei.addTexture(tex)
+
+        return aei
     
 
     def write(self, fp: Optional[BinaryIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> BinaryIO:
@@ -323,14 +379,15 @@ class AEI:
 
         return fp
     
+#region write-util
     
     def _writeHeaderMeta(self, fp: BinaryIO, format: CompressionFormat):
         fp.write(FILE_TYPE_HEADER)
-        fp.write(binaryio.uint8(format.value, ENDIANNESS))
+        fp.write(uint8(format.value, ENDIANNESS))
 
         def writeUInt16(*values: int):
             for v in values:
-                fp.write(binaryio.uint16(v, ENDIANNESS))
+                fp.write(uint16(v, ENDIANNESS))
 
         # AEI dimensions and texture count
         writeUInt16(
@@ -357,21 +414,22 @@ class AEI:
 
         # image length only appears in compressed AEIs
         if format.isCompressed:
-            fp.write(binaryio.uint32(len(compressed), ENDIANNESS))
+            fp.write(uint32(len(compressed), ENDIANNESS))
 
         fp.write(compressed)
 
 
     def _writeSymbols(self, fp: BinaryIO):
         #TODO: Unimplemented
-        fp.write(binaryio.uint16(0, ENDIANNESS)) # number of symbol groups
+        fp.write(uint16(0, ENDIANNESS)) # number of symbol groups
         ...
 
 
     def _writeFooterMeta(self, fp: BinaryIO, quality: Optional[CompressionQuality]):
         if quality is not None:
-            fp.write(binaryio.uint8(quality, ENDIANNESS))
+            fp.write(uint8(quality, ENDIANNESS))
 
+#endregion write-util
 
     def close(self):
         """Close the underlying image.
