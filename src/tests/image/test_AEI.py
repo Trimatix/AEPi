@@ -151,10 +151,10 @@ def test_read_twoTextures_isCorrect():
     USE_SMILEY = True
     with AEI.read(SMILEY_AEI_2TEXTURES_PATH) as aei:
         assert len(aei.textures) == 2
-        assert (aei.textures[0].width, aei.textures[0].height) == (8, 8)
-        assert (aei.textures[0].x, aei.textures[0].y) == (0, 0)
-        assert (aei.textures[1].width, aei.textures[1].height) == (8, 8)
-        assert (aei.textures[1].x, aei.textures[1].y) == (8, 8)
+        assert aei.textures[0].shape == (8, 8)
+        assert aei.textures[0].position == (0, 0)
+        assert aei.textures[1].shape == (8, 8)
+        assert aei.textures[1].position == (8, 8)
     USE_SMILEY = False
 
 

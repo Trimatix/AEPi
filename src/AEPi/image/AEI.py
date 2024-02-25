@@ -18,11 +18,12 @@ class AEI:
     """An Abyss Engine Image file.
     Contains a set of textures, each with an image and coordinates.
     Each texture must fall within the bounds of the AEI shape.
-    The AEI shape is mutable.
-    `format` and `quality` can be set in the constructor, or on call of `AEI.write`.
+    The AEI shape is mutable, through the `shape` property.
+    The coordinate origin (0, 0) is the top-left of the AEI.
 
     An AEI can be constructed either with its dimensions, or with an image.
     If an image is used, the AEI is created with a copy of the image.
+    `format` and `quality` can be set in the constructor, or on call of `AEI.write`.
 
     Use the `addTexture` and `removeTexture` helper methods for texture management.
 
