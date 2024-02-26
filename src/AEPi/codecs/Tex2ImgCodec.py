@@ -12,7 +12,7 @@ except ImportError as e:
 
 TEX2IMG_FORMAT_MAP = {
     CompressionFormat.PVRTC14A: 12,
-    CompressionFormat.ATC: 13,
+    CompressionFormat.ATC: 14,
     CompressionFormat.DXT1: 5,
     CompressionFormat.DXT5: 6,
     CompressionFormat.ETC1: 0
@@ -27,4 +27,8 @@ class Tex2ImgCodec(ImageCodecAdaptor):
             raise ValueError(f"Codec {Tex2ImgCodec.__name__} does not support format {format.name}")
         
         decompressed = tex2img.basisu_decompress(fp, width, height, TEX2IMG_FORMAT_MAP[format]) # type: ignore[reportUnknownMemberType]
-        return Image.frombytes(format.pillowMode, (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
+        im = Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
+        
+        if im.mode != format.pillowMode:
+            return im.convert(format.pillowMode)
+        return im
