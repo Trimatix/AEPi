@@ -40,90 +40,25 @@ jobs:
     - name: Run tests
       run: |
         # run tests and generate coverage
-        # Reject coverage below 80%
-        pytest --cov=. --cov-report=xml:test-coverage.xml --cov-fail-under=80
-        
-        # run tests again, but this time output to a txt file for the commenting step
-        pytest --cov=. > pytest-coverage-comment.txt
-        
-        # function to parse xml
-        # https://stackoverflow.com/questions/893585/how-to-parse-xml-in-bash
-        rdom () { local IFS=\> ; read -d \< E C ;}
-        
-        # parse the coverage file to find the main 'coverage' tag
-        while rdom; do
-            if [[ $E == coverage\ * ]]; then
-                COV_LINE=$E;
-                break;
-            fi;
-        done < test-coverage.xml
-        
-        # Extract the 'line-rate' (coverage) of the whole project from the coverage tag
-        # https://superuser.com/questions/434507/how-to-find-the-index-of-a-word-in-a-string-in-bash
-        COV_AR=($COV_LINE)
-        for el in "${COV_AR[@]}"; do
-          if [[ $el == line-rate=\"* ]]; then
-            # https://stackoverflow.com/questions/21077882/pattern-to-get-string-between-two-specific-words-characters-using-grep
-            TEST_COVERAGE=$(grep -oP '(?<=\").*?(?=\")' <<< $el)
-            echo Coverage found $TEST_COVERAGE
-            # multiply by 100 in a really hacky way, because no floating point arithmetic in bash
-            IFS="." read -ra TEST_COVERAGE_SPLIT <<< "$TEST_COVERAGE"
-            TEST_COVERAGE=$(sed -e 's/^[[0]]*//' <<< ${TEST_COVERAGE_SPLIT[0]})$(sed 's/./&./2' <<< ${TEST_COVERAGE_SPLIT[1]})%
-            echo "COVERAGE=${TEST_COVERAGE}" >> $GITHUB_ENV
-            break
-          fi;
-        done
-
-        # var REF = 'refs/pull/27/merge.json';
-        REF=${{ github.ref }}
-        # console.log('github.ref: ' + REF);
-        echo "github.ref: $REF"
-        # var PATHS = REF.split('/');
-        IFS='/' read -ra PATHS <<< "$REF"
-        # var BRANCH_NAME = PATHS[1] + PATHS[2];
-        BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
-        # console.log(BRANCH_NAME); // 'pull_27'
-        echo $BRANCH_NAME
-        # process.env.BRANCH = 'pull_27';
-        echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
-    - name: Create test coverage Badge
-      uses: schneegans/dynamic-badges-action@v1.0.0
+        pytest -m "not codecs" --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=AEPi tests/
+        # Tex2ImgCodec tests must be run separately to avoid segfault (#29)
+        pytest -m "codecs" --cov-append --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=AEPi tests/
+    - name: Pytest coverage comment
+      uses: MishaKav/pytest-coverage-comment@main
       with:
-        auth: ${{ secrets.GIST_SECRET }}
-        gistID: 8a5430ecc0f87b003367174b1521f3bb
-        filename: AEPi__${{ env.BRANCH }}.json
-        label: test coverage
-        message: ${{ env.COVERAGE }}
-        color: green
-        namedLogo: jest
-    - name: Comment on pull request with test coverage
-      uses: coroo/pytest-coverage-commentator@v1.0.2
-      with:
-        pytest-coverage: pytest-coverage-comment.txt
+        junitxml-path: ./pytest.xml
+        pytest-coverage-path: "./coverage.xml"
     - name: Run pyright
       uses: jakebailey/pyright-action@v1.3.0
-#       with:
-#         # Version of pyright to run. If not specified, the latest version will be used.
-#         version: # optional
-#         # Directory to run pyright in. If not specified, the repo root will be used.
-#         working-directory: # optional
-#         # Analyze for a specific platform (Darwin, Linux, Windows).
-#         python-platform: # optional
-#         # Analyze for a specific version (3.3, 3.4, etc.).
-#         python-version: # optional
-#         # Use typeshed type stubs at this location.
-#         typeshed-path: # optional
-#         # Directory that contains virtual environments.
-#         venv-path: # optional
-#         # Use the configuration file at this location.
-#         project: # optional
-#         # Use library code to infer types when stubs are missing.
-#         lib: # optional, default is false
-#         # Use exit code of 1 if warnings are reported.
-#         warnings: # optional, default is false
-#         # Package name to run the type verifier on; must be an *installed* library. Any score under 100% will fail the build.
-#         verify-types: # optional
-#         # Extra arguments; can be used to specify specific files to check.
-#         extra-args: # optional
-#         # Disable issue/commit comments
-#         no-comments: # optional, default is false
+    - name: Check for test failures/low coverage
+      run: |
+        # Reject if there were any failures or errors, or coverage below 80%
+        if [[ ${{ steps.coverageComment.outputs.coverage }} < 80 ]] ; then
+          core.setFailed('Test coverage must be at least 80%')
+        fi
+        if [[ ${{ steps.coverageComment.outputs.errors }} > 0 ]] ; then
+          core.setFailed('Tests must have no errors')
+        fi
+        if [[ ${{ steps.coverageComment.outputs.failures }} > 0 ]] ; then
+          core.setFailed('Tests must have no failures')
+        fi
