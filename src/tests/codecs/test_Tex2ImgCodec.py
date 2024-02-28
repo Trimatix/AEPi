@@ -2,6 +2,7 @@ from PIL.Image import Image
 from AEPi import CompressionFormat
 from AEPi.codecs.Tex2ImgCodec import Tex2ImgCodec
 from PIL import Image
+import pytest
 
 from AEPi.constants import CompressionFormat
 
@@ -34,6 +35,8 @@ def smileyRoundtripImage(format: CompressionFormat):
     return png
 
 
+@pytest.mark.codecs
+@pytest.mark.codecs_PVRTC14A
 def test_decompress_PVRTC14A_succeeds():
     with smileyRoundtripImage(CompressionFormat.PVRTC14A) as expected:
         compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.PVRTC14A]
@@ -42,6 +45,8 @@ def test_decompress_PVRTC14A_succeeds():
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
 
+@pytest.mark.codecs
+@pytest.mark.codecs_ATC
 def test_decompress_ATC_succeeds():
     with smileyRoundtripImage(CompressionFormat.ATC) as expected:
         compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.ATC]
@@ -50,6 +55,8 @@ def test_decompress_ATC_succeeds():
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
 
+@pytest.mark.codecs
+@pytest.mark.codecs_DXT1
 def test_decompress_DXT1_succeeds():
     with smileyRoundtripImage(CompressionFormat.DXT1) as expected:
         compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.DXT1]
@@ -58,6 +65,8 @@ def test_decompress_DXT1_succeeds():
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
 
+@pytest.mark.codecs
+@pytest.mark.codecs_DXT5
 def test_decompress_DXT5_succeeds():
     with smileyRoundtripImage(CompressionFormat.DXT5) as expected:
         compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.DXT5]
@@ -66,6 +75,8 @@ def test_decompress_DXT5_succeeds():
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
 
+@pytest.mark.codecs
+@pytest.mark.codecs_ETC1
 def test_decompress_ETC1_succeeds():
     with smileyRoundtripImage(CompressionFormat.ETC1) as expected:
         compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.ETC1]
