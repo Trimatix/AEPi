@@ -40,9 +40,9 @@ jobs:
     - name: Run tests
       run: |
         # run tests and generate coverage
-        pytest -m "not codecs" --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=AEPi tests/
+        pytest -m "not codecs" --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=.
         # Tex2ImgCodec tests must be run separately to avoid segfault (#29)
-        pytest -m "codecs" --cov-append --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=AEPi tests/
+        pytest -m "codecs" --cov-append --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=.
     - name: Pytest coverage comment
       uses: MishaKav/pytest-coverage-comment@main
       with:
