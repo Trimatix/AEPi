@@ -141,7 +141,8 @@ Using this, you could for example, batch export all of the individual images wit
 
 ```py
 for i, tex in enumerate(aei.textures):
-  aei.getTexture(tex).save(f"batch/export/{i}.png")
+  with aei.getTexture(tex) as im:
+    im.save(f"batch/export/{i}.png")
 ```
 
 #### Create a new AEI
