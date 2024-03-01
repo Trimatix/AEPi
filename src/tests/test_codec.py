@@ -3,6 +3,7 @@ from AEPi.codec import ImageCodecAdaptor, supportsFormats, compressorFor, decomp
 from AEPi.codec import compressors as RegisteredCompressors
 from AEPi.codec import decompressors as RegisteredDecompressors
 from AEPi.constants import CompressionFormat
+from AEPi.exceptions import UnsupportedCompressionFormatException
 from contextlib import contextmanager
 import pytest
 from PIL.Image import Image
@@ -77,5 +78,5 @@ def test_decompressorFor_GetsCorrectCodec(format: CompressionFormat, codec: Type
 
 def test_compressorFor_unknownFormat_throws():
     with mockCodecs():
-        with pytest.raises(KeyError):
+        with pytest.raises(UnsupportedCompressionFormatException):
             compressorFor(CompressionFormat.PVRTC14A)

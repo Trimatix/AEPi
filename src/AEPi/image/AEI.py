@@ -11,7 +11,7 @@ from ..lib.binaryio import uint8, uint16, uint32, readUInt8, readUInt16, readUIn
 from ..constants import CompressionFormat, FILE_TYPE_HEADER, ENDIANNESS, CompressionQuality
 from .. import codec
 from .texture import Texture
-from ..exceptions import UnsupportedAeiFeatureException, AeiReadException
+from ..exceptions import UnsupportedAeiFeatureException, AeiReadException, AeiWriteException
 
 TException = TypeVar("TException", bound=Exception)
 
@@ -303,8 +303,7 @@ class AEI:
             formatId = readUInt8(file, ENDIANNESS)
             format, mipmapped = CompressionFormat.fromBinary(formatId)
             if mipmapped:
-                exc = UnsupportedAeiFeatureException("Mipmapped textures")
-                raise AeiReadException() from exc
+                raise UnsupportedAeiFeatureException("Mipmapped textures")
             
             imageCodec = codec.decompressorFor(format)
 
@@ -330,12 +329,15 @@ class AEI:
             symbolGroups = readUInt16(file, ENDIANNESS)
 
             if symbolGroups > 0:
-                raise ValueError("AEIs with symbols are not yet supported")
+                raise UnsupportedAeiFeatureException("Symbol maps")
             
             bQuality = readUInt8(file, ENDIANNESS, None)
             quality = cast(Optional[CompressionQuality], bQuality) 
 
             decompressed = imageCodec.decompress(compressed, format, width, height, quality)
+
+        except Exception as ex:
+            raise AeiReadException() from ex
 
         finally:
             if tempFp:
@@ -374,13 +376,18 @@ class AEI:
         if tempTexture := (len(self.textures) == 0):
             self.addTexture(Texture(0, 0, self.width, self.height))
 
-        self._writeHeaderMeta(fp, format)
-        self._writeImageContent(fp, format, quality)
-        self._writeSymbols(fp)
-        self._writeFooterMeta(fp, quality)
+        try:
+            self._writeHeaderMeta(fp, format)
+            self._writeImageContent(fp, format, quality)
+            self._writeSymbols(fp)
+            self._writeFooterMeta(fp, quality)
 
-        if tempTexture:
-            self.removeTexture(0, 0, self.width, self.height)
+        except Exception as ex:
+            raise AeiWriteException() from ex
+        
+        finally:
+            if tempTexture:
+                self.removeTexture(0, 0, self.width, self.height)
 
         return fp
     
