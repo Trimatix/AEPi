@@ -9,3 +9,20 @@ build-backend = "setuptools.build_meta"
 exclude = [
     "src/tests/assets"
 ]
+
+[tool.pytest.ini_options]
+markers = [
+    # Codec tests need to be run in isolation to prevent a segfault (#29)
+    "codecs_Unknown: Codecs that handle the Unknown format",
+    "codecs_Uncompressed_UI: Codecs that handle the Uncompressed_UI format",
+    "codecs_Uncompressed_CubeMap_PC: Codecs that handle the Uncompressed_CubeMap_PC format",
+    "codecs_Uncompressed_CubeMap: Codecs that handle the Uncompressed_CubeMap format",
+    "codecs_PVRTC12A: Codecs that handle the PVRTC12A format",
+    "codecs_PVRTC14A: Codecs that handle the PVRTC14A format",
+    "codecs_ATC: Codecs that handle the ATC format",
+    "codecs_DXT1: Codecs that handle the DXT1 format",
+    "codecs_DXT3: Codecs that handle the DXT3 format",
+    "codecs_DXT5: Codecs that handle the DXT5 format",
+    "codecs_ETC1: Codecs that handle the ETC1 format",
+    "codecs: All codecs"
+]

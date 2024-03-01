@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Dict, Optional, Type, TypeVar, Iterable
 from PIL.Image import Image
 
@@ -6,7 +6,6 @@ from .constants import CompressionFormat, CompressionQuality
 
 class ImageCodecAdaptor(ABC):
     @classmethod
-    @abstractmethod
     def compress(cls, im: Image, format: CompressionFormat, quality: Optional[CompressionQuality]) -> bytes:
         """Compress a BGRA image into format `format`, with quality `quality`
 
@@ -19,11 +18,10 @@ class ImageCodecAdaptor(ABC):
         :return: `im`, compressed into format `format`
         :rtype: bytes
         """
-        raise NotImplementedError()
+        raise NotImplementedError(f"Codec {cls.__name__} is not capable of compression")
 
 
     @classmethod
-    @abstractmethod
     def decompress(cls, fp: bytes, format: CompressionFormat, width: int, height: int, quality: Optional[CompressionQuality]) -> Image:
         """Decompress a `format`-compressed BGRA image into a BGRA Image.
 
@@ -38,7 +36,7 @@ class ImageCodecAdaptor(ABC):
         :return: `fp`, decompressed into a BGRA image
         :rtype: Image
         """
-        raise NotImplementedError()
+        raise NotImplementedError(f"Codec {cls.__name__} is not capable of decompression")
 
 
 compressors: Dict[CompressionFormat, Type[ImageCodecAdaptor]] = {}
@@ -77,15 +75,18 @@ def supportsFormats(
     :type format: Optional[Iterable[CompressionFormat]]
     """
     def inner(cls: Type[TCodec]) -> Type[TCodec]:
-        for f in compresses or []:
-            compressors[f] = cls
+        if compresses:
+            for f in compresses:
+                compressors[f] = cls
 
-        for f in decompresses or []:
-            decompressors[f] = cls
+        if decompresses:
+            for f in decompresses:
+                decompressors[f] = cls
 
-        for f in both or []:
-            compressors[f] = cls
-            decompressors[f] = cls
+        if both:
+            for f in both:
+                compressors[f] = cls
+                decompressors[f] = cls
         return cls
     return inner
 
