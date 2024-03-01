@@ -11,7 +11,7 @@ except ImportError as e:
     raise DependancyMissingException("Tex2ImgCodec", "tex2img", e)
 
 TEX2IMG_FORMAT_MAP = {
-    CompressionFormat.PVRTC14A: 12,
+    # CompressionFormat.PVRTC14A: 12, # Tex2ImgCodec segfaults decoding PVRTC with all tests (#29)
     CompressionFormat.ATC: 14,
     CompressionFormat.DXT1: 5,
     CompressionFormat.DXT5: 6,

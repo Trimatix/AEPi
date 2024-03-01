@@ -35,14 +35,15 @@ def smileyRoundtripImage(format: CompressionFormat):
     return png
 
 
-@pytest.mark.codecs
-@pytest.mark.codecs_PVRTC14A
-def test_decompress_PVRTC14A_succeeds():
-    with smileyRoundtripImage(CompressionFormat.PVRTC14A) as expected:
-        compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.PVRTC14A]
-        actual = CODEC.decompress(compressed, CompressionFormat.PVRTC14A, expected.width, expected.height, None)
-        for coords in zip(range(expected.width), range(expected.height)):
-            assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
+# Tex2ImgCodec segfaults decoding PVRTC with all tests (#29)
+# @pytest.mark.codecs
+# @pytest.mark.codecs_PVRTC14A
+# def test_decompress_PVRTC14A_succeeds():
+#     with smileyRoundtripImage(CompressionFormat.PVRTC14A) as expected:
+#         compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.PVRTC14A]
+#         actual = CODEC.decompress(compressed, CompressionFormat.PVRTC14A, expected.width, expected.height, None)
+#         for coords in zip(range(expected.width), range(expected.height)):
+#             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
 
 @pytest.mark.codecs
