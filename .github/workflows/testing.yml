@@ -55,11 +55,14 @@ jobs:
         covperc=${{ steps.coverageComment.outputs.coverage }}
         # Strip % character off the end of code coverage (no need to convert to int in bash)
         if [[ ${covperc%\%*} < 80 ]] ; then
-          core.setFailed('Test coverage must be at least 80%')
+          echo "::error title=Test coverage too low::Tests achieve ${{ steps.coverageComment.outputs.coverage }} coverage, but at least 80% is required"
+          exit 1
         fi
         if [[ ${{ steps.coverageComment.outputs.errors }} > 0 ]] ; then
-          core.setFailed('Tests must have no errors')
+          echo "::error title=Test errors::Tests had ${{ steps.coverageComment.outputs.errors }} errors, but must have 0 to pass"
+          exit 1
         fi
         if [[ ${{ steps.coverageComment.outputs.failures }} > 0 ]] ; then
-          core.setFailed('Tests must have no failures')
+          echo "::error title=Test failures::Tests had ${{ steps.coverageComment.outputs.failures }} failures, but must have 0 to pass"
+          exit 1
         fi
