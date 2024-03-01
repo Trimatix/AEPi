@@ -1,14 +1,17 @@
 import io
+from typing import Any, BinaryIO
 from os import PathLike
 from types import TracebackType
-from typing import List, Optional, Set, Tuple, Type, TypeVar, Union, overload
+from typing import Any, List, Optional, Set, Tuple, Type, TypeVar, Union, cast, overload
 from PIL import Image
 
-from ..lib import binaryio, imageOps
+from ..lib import imageOps
+from ..lib.binaryio import uint8, uint16, uint32, readUInt8, readUInt16, readUInt32
 
 from ..constants import CompressionFormat, FILE_TYPE_HEADER, ENDIANNESS, CompressionQuality
 from .. import codec
 from .texture import Texture
+from ..exceptions import UnsupportedAeiFeatureException, AeiReadException, AeiWriteException
 
 TException = TypeVar("TException", bound=Exception)
 
@@ -16,11 +19,12 @@ class AEI:
     """An Abyss Engine Image file.
     Contains a set of textures, each with an image and coordinates.
     Each texture must fall within the bounds of the AEI shape.
-    The AEI shape is mutable.
-    `format` and `quality` can be set in the constructor, or on call of `AEI.write`.
+    The AEI shape is mutable, through the `shape` property.
+    The coordinate origin (0, 0) is the top-left of the AEI.
 
     An AEI can be constructed either with its dimensions, or with an image.
     If an image is used, the AEI is created with a copy of the image.
+    `format` and `quality` can be set in the constructor, or on call of `AEI.write`.
 
     Use the `addTexture` and `removeTexture` helper methods for texture management.
 
@@ -31,10 +35,10 @@ class AEI:
     the AEI will attempt to close all images, and swallow any errors encountered.
     """
     @overload
-    def __init__(self, shape: Tuple[int, int], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None): ...
+    def __init__(self, shape: Tuple[int, int], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> None: ...
     
     @overload
-    def __init__(self, image: Image.Image, /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None): ...
+    def __init__(self, image: Image.Image, /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> None: ...
 
     def __init__(self, val1: Union[Image.Image, Tuple[int, int]], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None):
         self._textures: List[Texture] = []
@@ -133,7 +137,7 @@ class AEI:
 
 
     @overload
-    def addTexture(self, texture: Texture, /):
+    def addTexture(self, texture: Texture, /) -> None:
         """Add only a texture bounding box to this AEI. Use the overload with `Image` as the first parameter to add image content.
         This overload is only really useful for creating overlapping textures.
 
@@ -143,7 +147,7 @@ class AEI:
         """
     
     @overload
-    def addTexture(self, x: int, y: int, width: int, height: int, /):
+    def addTexture(self, x: int, y: int, width: int, height: int, /) -> None:
         """Add only a texture bounding box to this AEI. Use the overload with `Image` as the first parameter to add image content.
         This overload is only really useful for creating overlapping textures.
 
@@ -155,7 +159,7 @@ class AEI:
         """
 
     @overload
-    def addTexture(self, image: Image.Image, x: int, y: int, /):
+    def addTexture(self, image: Image.Image, x: int, y: int, /) -> None:
         """Add a texture with image content to this AEI.
         `image` is not retained, and can be closed after passing to this method without side effects.
 
@@ -226,10 +230,10 @@ class AEI:
 
 
     @overload
-    def removeTexture(self, texture: Texture, /, *, clearImage: Optional[bool] = None): ...
+    def removeTexture(self, texture: Texture, /, *, clearImage: Optional[bool] = None) -> None: ...
 
     @overload
-    def removeTexture(self, x: int, y: int, width: int, height: int, /, *, clearImage: Optional[bool] = None): ...
+    def removeTexture(self, x: int, y: int, width: int, height: int, /, *, clearImage: Optional[bool] = None) -> None: ...
 
     def removeTexture(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None, /, *, clearImage: Optional[bool] = None):
         """Remove a texture from this AEI, by its bounding box.
@@ -270,7 +274,7 @@ class AEI:
 
 
     @classmethod
-    def read(cls, fp: Union[str, PathLike, io.BytesIO]) -> "AEI":
+    def read(cls, fp: Union[str, PathLike[Any], io.BytesIO]) -> "AEI":
         """Read an AEI file from bytes, or a file.
         `fp` can be a path to a file, or an in-memory buffer containing the contents of an encoded AEI file, including metadata.
 
@@ -279,14 +283,74 @@ class AEI:
         :return: A new AEI file object, containing the decoded contents of `fp`
         :rtype: AEI
         """
-        # if tempFp := (not isinstance(fp, io.BytesIO)):
-        #     fp = open(fp, "rb")
-        raise NotImplementedError()
-        # if tempFp:
-        #     fp.close()
+        if isinstance(fp, io.StringIO):
+            raise ValueError("fp must be of binary type, not StringIO")
+        
+        file: Union[io.BufferedReader, io.BytesIO]
+
+        if tempFp := (not isinstance(fp, io.BytesIO)):
+            file = open(fp, "rb")
+        elif isinstance(fp, (str, PathLike)):
+            file = open(fp, mode="rb")
+        else:
+            file = fp
+
+        try:
+            bFileType = file.read(len(FILE_TYPE_HEADER))
+            if bFileType != FILE_TYPE_HEADER:
+                raise ValueError(f"Given file is of unknown type '{str(bFileType, encoding='utf-8')}' expected '{str(FILE_TYPE_HEADER, encoding='utf-8')}'")
+
+            formatId = readUInt8(file, ENDIANNESS)
+            format, mipmapped = CompressionFormat.fromBinary(formatId)
+            if mipmapped:
+                raise UnsupportedAeiFeatureException("Mipmapped textures")
+            
+            imageCodec = codec.decompressorFor(format)
+
+            width = readUInt16(file, ENDIANNESS)
+            height = readUInt16(file, ENDIANNESS)
+            numTextures = readUInt16(file, ENDIANNESS)
+
+            textures: List[Texture] = []
+            for _ in range(numTextures):
+                texX = readUInt16(file, ENDIANNESS)
+                texY = readUInt16(file, ENDIANNESS)
+                texWidth = readUInt16(file, ENDIANNESS)
+                texHeight = readUInt16(file, ENDIANNESS)
+                textures.append(Texture(texX, texY, texWidth, texHeight))
+
+            if format.isCompressed:
+                imageLength = readUInt32(file, ENDIANNESS)
+            else:
+                imageLength = 4 * width * height
+
+            compressed = file.read(imageLength)
+
+            symbolGroups = readUInt16(file, ENDIANNESS)
+
+            if symbolGroups > 0:
+                raise UnsupportedAeiFeatureException("Symbol maps")
+            
+            bQuality = readUInt8(file, ENDIANNESS, None)
+            quality = cast(Optional[CompressionQuality], bQuality) 
+
+            decompressed = imageCodec.decompress(compressed, format, width, height, quality)
+
+        except Exception as ex:
+            raise AeiReadException() from ex
+
+        finally:
+            if tempFp:
+                file.close()
+
+        aei = AEI(decompressed, format=format, quality=quality)
+        for tex in textures:
+            aei.addTexture(tex)
+
+        return aei
     
 
-    def write(self, fp: Optional[io.BytesIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> io.BytesIO:
+    def write(self, fp: Optional[BinaryIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> BinaryIO:
         """Write this AEI to a BytesIO file.
 
         :param fp: Optional file to write to. If not given, a new one is created. defaults to None
@@ -312,24 +376,30 @@ class AEI:
         if tempTexture := (len(self.textures) == 0):
             self.addTexture(Texture(0, 0, self.width, self.height))
 
-        self._writeHeaderMeta(fp, format)
-        self._writeImageContent(fp, format, quality)
-        self._writeSymbols(fp)
-        self._writeFooterMeta(fp, quality)
+        try:
+            self._writeHeaderMeta(fp, format)
+            self._writeImageContent(fp, format, quality)
+            self._writeSymbols(fp)
+            self._writeFooterMeta(fp, quality)
 
-        if tempTexture:
-            self.removeTexture(0, 0, self.width, self.height)
+        except Exception as ex:
+            raise AeiWriteException() from ex
+        
+        finally:
+            if tempTexture:
+                self.removeTexture(0, 0, self.width, self.height)
 
         return fp
     
+#region write-util
     
-    def _writeHeaderMeta(self, fp: io.BytesIO, format: CompressionFormat):
+    def _writeHeaderMeta(self, fp: BinaryIO, format: CompressionFormat):
         fp.write(FILE_TYPE_HEADER)
-        fp.write(binaryio.uint8(format.value, ENDIANNESS))
+        fp.write(uint8(format.value, ENDIANNESS))
 
         def writeUInt16(*values: int):
             for v in values:
-                fp.write(binaryio.uint16(v, ENDIANNESS))
+                fp.write(uint16(v, ENDIANNESS))
 
         # AEI dimensions and texture count
         writeUInt16(
@@ -348,7 +418,7 @@ class AEI:
             )
     
 
-    def _writeImageContent(self, fp: io.BytesIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
+    def _writeImageContent(self, fp: BinaryIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
         imageCodec = codec.compressorFor(format)
 
         with imageOps.switchRGBA_BGRA(self._image) as swapped:
@@ -356,21 +426,22 @@ class AEI:
 
         # image length only appears in compressed AEIs
         if format.isCompressed:
-            fp.write(binaryio.uint32(len(compressed), ENDIANNESS))
+            fp.write(uint32(len(compressed), ENDIANNESS))
 
         fp.write(compressed)
 
 
-    def _writeSymbols(self, fp: io.BytesIO):
+    def _writeSymbols(self, fp: BinaryIO):
         #TODO: Unimplemented
-        fp.write(binaryio.uint16(0, ENDIANNESS)) # number of symbol groups
+        fp.write(uint16(0, ENDIANNESS)) # number of symbol groups
         ...
 
 
-    def _writeFooterMeta(self, fp: io.BytesIO, quality: Optional[CompressionQuality]):
+    def _writeFooterMeta(self, fp: BinaryIO, quality: Optional[CompressionQuality]):
         if quality is not None:
-            fp.write(binaryio.uint8(quality, ENDIANNESS))
+            fp.write(uint8(quality, ENDIANNESS))
 
+#endregion write-util
 
     def close(self):
         """Close the underlying image.

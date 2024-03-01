@@ -1,13 +1,12 @@
-from abc import ABC, abstractmethod
-from io import BytesIO
+from abc import ABC
 from typing import Dict, Optional, Type, TypeVar, Iterable
 from PIL.Image import Image
 
 from .constants import CompressionFormat, CompressionQuality
+from .exceptions import UnsupportedCompressionFormatException
 
 class ImageCodecAdaptor(ABC):
     @classmethod
-    @abstractmethod
     def compress(cls, im: Image, format: CompressionFormat, quality: Optional[CompressionQuality]) -> bytes:
         """Compress a BGRA image into format `format`, with quality `quality`
 
@@ -20,22 +19,25 @@ class ImageCodecAdaptor(ABC):
         :return: `im`, compressed into format `format`
         :rtype: bytes
         """
-        raise NotImplementedError()
+        raise NotImplementedError(f"Codec {cls.__name__} is not capable of compression")
 
 
     @classmethod
-    @abstractmethod
-    def decompress(cls, fp: BytesIO, format: CompressionFormat) -> Image:
+    def decompress(cls, fp: bytes, format: CompressionFormat, width: int, height: int, quality: Optional[CompressionQuality]) -> Image:
         """Decompress a `format`-compressed BGRA image into a BGRA Image.
 
         :param fp: The compressed image to decompress
-        :type im: BytesIO
+        :type im: bytes
         :param format: The compression format
         :type format: CompressionFormat
+        :param width: The width of the image
+        :type width: int
+        :param height: The height of the image
+        :type height: int
         :return: `fp`, decompressed into a BGRA image
         :rtype: Image
         """
-        raise NotImplementedError()
+        raise NotImplementedError(f"Codec {cls.__name__} is not capable of decompression")
 
 
 compressors: Dict[CompressionFormat, Type[ImageCodecAdaptor]] = {}
@@ -74,15 +76,18 @@ def supportsFormats(
     :type format: Optional[Iterable[CompressionFormat]]
     """
     def inner(cls: Type[TCodec]) -> Type[TCodec]:
-        for f in compresses or []:
-            compressors[f] = cls
+        if compresses:
+            for f in compresses:
+                compressors[f] = cls
 
-        for f in decompresses or []:
-            decompressors[f] = cls
+        if decompresses:
+            for f in decompresses:
+                decompressors[f] = cls
 
-        for f in both or []:
-            compressors[f] = cls
-            decompressors[f] = cls
+        if both:
+            for f in both:
+                compressors[f] = cls
+                decompressors[f] = cls
         return cls
     return inner
 
@@ -94,10 +99,10 @@ def compressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
     :type format: CompressionFormat
     :return: An ImageCodecAdaptor subclass that can compress `format`
     :rtype: Type[ImageCodecAdaptor]
-    :raises KeyError: If no compatible codec is loaded
+    :raises AeiWriteException: If no compatible codec is loaded
     """
     if format not in compressors:
-        raise KeyError(f"No {ImageCodecAdaptor.__name__} found for format '{format.name}' compression. Make sure that the module containing the class has been imported.")
+        raise UnsupportedCompressionFormatException(format)
     return compressors[format]
 
 
@@ -108,8 +113,8 @@ def decompressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
     :type format: CompressionFormat
     :return: An ImageCodecAdaptor subclass that can decompress `format`
     :rtype: Type[ImageCodecAdaptor]
-    :raises KeyError: If no compatible codec is loaded
+    :raises AeiReadException: If no compatible codec is loaded
     """
     if format not in decompressors:
-        raise KeyError(f"No {ImageCodecAdaptor.__name__} found for format '{format.name}' decompression. Make sure that the module containing the class has been imported.")
+        raise UnsupportedCompressionFormatException(format)
     return decompressors[format]

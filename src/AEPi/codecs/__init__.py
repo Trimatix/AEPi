@@ -1,22 +1,12 @@
 import importlib
+from ..exceptions import CodecLoadException
 
 # Discover codecs
 
-codecDependencies = {
-    "EtcPakCodec": [
-        "etcpak"
-    ]
-}
+_CODECS = ["EtcPakCodec", "Tex2ImgCodec"]
 
-for codec, dependencies in codecDependencies.items():
-    success = True
-    
-    for dependency in dependencies:
-        try:
-            importlib.import_module(dependency)
-        except ImportError:
-            success = False
-            break
-
-    if success:
-        importlib.import_module("." + codec, "AEPi.codecs")
+for codec in _CODECS:
+    try:
+        importlib.import_module(f".{codec}", "AEPi.codecs")
+    except CodecLoadException:
+        pass

@@ -71,7 +71,12 @@
         <li><a href="#installation">Installation</a></li>
       </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
+    <li>
+      <a href="#usage">Usage</a></li>
+      <ul>
+        <li><a href="#open-an-aei-file-on-disk">Open an .aei file on disk</a></li>
+        <li><a href="#create-a-new-aei">Create a new AEI</a></li>
+      </ul>
     <li><a href="#roadmap">Roadmap</a></li>
     <li><a href="#contributing">Contributing</a></li>
   </ol>
@@ -126,6 +131,18 @@ with AEI.read("path/to/file.aei") as aei:
     f"with {len(aei.textures)} textures. "
     f"Width: {aei.shape[0]} Height: {aei.shape[0]}"
 )
+```
+
+##### Reading textures as image segments
+
+`AEI.textures` provides read access to all of the AEI's bounding boxes. The `AEI.getTexture` method returns the relevant segment of the AEI, as a Pillow `Image`.
+
+Using this, you could for example, batch export all of the individual images within an AEI:
+
+```py
+for i, tex in enumerate(aei.textures):
+  with aei.getTexture(tex) as im:
+    im.save(f"batch/export/{i}.png")
 ```
 
 #### Create a new AEI
