@@ -40,13 +40,12 @@ jobs:
     - name: Run tests
       run: |
         # run tests and generate coverage
-        pytest --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=.
+        pytest --junitxml=pytest.xml --cov=.
     - name: Pytest coverage comment
       id: coverageComment
       uses: MishaKav/pytest-coverage-comment@main
       with:
         junitxml-path: ./pytest.xml
-        pytest-coverage-path: "./coverage.xml"
     - name: Run pyright
       uses: jakebailey/pyright-action@v1.3.0
     - name: Check for test failures/low coverage
