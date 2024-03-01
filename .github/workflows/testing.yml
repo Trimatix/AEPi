@@ -54,7 +54,7 @@ jobs:
         # Reject if there were any failures or errors, or coverage below 80%
         covperc=${{ steps.coverageComment.outputs.coverage }}
         # Strip % character off the end of code coverage (no need to convert to int in bash)
-        if [[ ${covperc:0:2} < 80 ]] ; then
+        if [[ ${covperc%\%*} < 80 ]] ; then
           core.setFailed('Test coverage must be at least 80%')
         fi
         if [[ ${{ steps.coverageComment.outputs.errors }} > 0 ]] ; then
