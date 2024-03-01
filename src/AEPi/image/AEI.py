@@ -11,6 +11,7 @@ from ..lib.binaryio import uint8, uint16, uint32, readUInt8, readUInt16, readUIn
 from ..constants import CompressionFormat, FILE_TYPE_HEADER, ENDIANNESS, CompressionQuality
 from .. import codec
 from .texture import Texture
+from ..exceptions import UnsupportedAeiFeatureException, AeiReadException
 
 TException = TypeVar("TException", bound=Exception)
 
@@ -300,7 +301,11 @@ class AEI:
                 raise ValueError(f"Given file is of unknown type '{str(bFileType, encoding='utf-8')}' expected '{str(FILE_TYPE_HEADER, encoding='utf-8')}'")
 
             formatId = readUInt8(file, ENDIANNESS)
-            format = CompressionFormat(formatId)
+            format, mipmapped = CompressionFormat.fromBinary(formatId)
+            if mipmapped:
+                exc = UnsupportedAeiFeatureException("Mipmapped textures")
+                raise AeiReadException() from exc
+            
             imageCodec = codec.decompressorFor(format)
 
             width = readUInt16(file, ENDIANNESS)

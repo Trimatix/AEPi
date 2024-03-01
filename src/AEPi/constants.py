@@ -1,9 +1,12 @@
 from enum import Enum
-from typing import Literal, Dict
-from AEPi.lib.binaryio import Endianness
+from typing import Literal, Dict, Tuple
+from .lib.binaryio import Endianness
+from . import exceptions 
 
 FORMAT_PILLOW_MODES: Dict["CompressionFormat", str] = {}
 FORMAT_BITCOUNTS: Dict["CompressionFormat", int] = {}
+MASK_MIPMAPPED_FLAG = 0b00000010
+MASK_FORMAT_ID = 0b11111101
 
 class CompressionFormat(Enum):
     """Compression formats.
@@ -20,6 +23,16 @@ class CompressionFormat(Enum):
     DXT3 =                      0b00100001
     DXT5 =                      0b00100100
     ETC1 =                      0b01000000
+
+
+    @classmethod
+    def fromBinary(cls, rawId: int) -> Tuple["CompressionFormat", bool]:
+        mipmapped = rawId & MASK_MIPMAPPED_FLAG == 2
+        id = rawId & MASK_FORMAT_ID
+        if not any(f.value == id for f in CompressionFormat):
+            raise exceptions.InvalidCompressionFormatException(rawId)
+        return CompressionFormat(id), mipmapped
+
 
     @property
     def isCompressed(self):

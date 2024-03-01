@@ -3,6 +3,7 @@ from typing import Dict, Optional, Type, TypeVar, Iterable
 from PIL.Image import Image
 
 from .constants import CompressionFormat, CompressionQuality
+from .exceptions import UnsupportedCompressionFormatException, AeiReadException, AeiWriteException
 
 class ImageCodecAdaptor(ABC):
     @classmethod
@@ -101,7 +102,8 @@ def compressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
     :raises KeyError: If no compatible codec is loaded
     """
     if format not in compressors:
-        raise KeyError(f"No {ImageCodecAdaptor.__name__} found for format '{format.name}' compression. Make sure that the module containing the class has been imported.")
+        exc = UnsupportedCompressionFormatException(format)
+        raise AeiWriteException(None, exc) from exc
     return compressors[format]
 
 
@@ -115,5 +117,6 @@ def decompressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
     :raises KeyError: If no compatible codec is loaded
     """
     if format not in decompressors:
-        raise KeyError(f"No {ImageCodecAdaptor.__name__} found for format '{format.name}' decompression. Make sure that the module containing the class has been imported.")
+        exc = UnsupportedCompressionFormatException(format)
+        raise AeiReadException(None, exc) from exc
     return decompressors[format]
