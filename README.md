@@ -195,7 +195,7 @@ And compression format support progress:
 
 |Format                 |Read support|Write support |
 |-----------------------|:----------:|:------------:|
-|Unknown\*              |     ❌     |      ❌      |
+|Unknown                |     ❌     |      ❌      |
 |Uncompressed_UI        |     ❌     |      ❌      |
 |Uncompressed_CubeMap_PC|     ❌     |      ❌      |
 |Uncompressed_CubeMap   |     ❌     |      ❌      |
