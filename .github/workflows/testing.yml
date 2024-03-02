@@ -67,3 +67,28 @@ jobs:
           echo "::error title=Test failures::Tests had ${{ steps.coverageComment.outputs.failures }} failures, but must have 0 to pass"
           exit 1
         fi
+
+        # Extract branch name
+        # var REF = 'refs/pull/27/merge.json';
+        REF=${{ github.ref }}
+        # console.log('github.ref: ' + REF);
+        echo "github.ref: $REF"
+        # var PATHS = REF.split('/');
+        IFS='/' read -ra PATHS <<< "$REF"
+        # var BRANCH_NAME = PATHS[1] + PATHS[2];
+        BRANCH_NAME="${PATHS[1]}_${PATHS[2]}"
+        # console.log(BRANCH_NAME); // 'pull_27'
+        echo $BRANCH_NAME
+        # process.env.BRANCH = 'pull_27';
+        echo "BRANCH=$(echo ${BRANCH_NAME})" >> $GITHUB_ENV
+    - name: Create readme test coverage Badge
+      uses: schneegans/dynamic-badges-action@v1.7.0
+      with:
+        auth: ${{ secrets.GIST_SECRET }}
+        gistID: 8a5430ecc0f87b003367174b1521f3bb
+        filename: AEPi__${{ env.BRANCH }}.json
+        label: test coverage
+        message: ${{ steps.coverageComment.outputs.coverage }}
+        valColorRange: ${{ steps.coverageComment.outputs.coverage }}
+        maxColorRange: 100
+        minColorRange: 0
