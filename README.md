@@ -17,7 +17,7 @@
   /></a>
   <a href="https://github.com/Trimatix/AEPi/actions"
     ><img
-      src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/Trimatix/2551cac90336c1d1073d8615407cc72d/raw/AEPi__heads_main.json"
+      src="https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/Trimatix/8a5430ecc0f87b003367174b1521f3bb/raw/AEPi__heads_main.json"
       alt="Test coverage"
   /></a>
 </p>
