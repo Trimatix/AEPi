@@ -337,7 +337,7 @@ class AEI:
             decompressed = imageCodec.decompress(compressed, format, width, height, quality)
 
         except Exception as ex:
-            raise AeiReadException() from ex
+            raise AeiReadException(None, ex) from ex
 
         finally:
             if tempFp:
@@ -383,7 +383,7 @@ class AEI:
             self._writeFooterMeta(fp, quality)
 
         except Exception as ex:
-            raise AeiWriteException() from ex
+            raise AeiWriteException(None, ex) from ex
         
         finally:
             if tempTexture:
