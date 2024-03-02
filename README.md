@@ -93,9 +93,11 @@ The engine uses a proprietary file format for grids of images, called Abyss Engi
 
 The AEI format was analysed by the Russian modding group 'CatLabs', who later created a GUI and command-line tool for conversion between PNG and AEI, named AEIEditor.
 
-This tool was closed-source, and relied on a windows DLL for compression. AEPi is a minimal recreation of the image conversion logic provided by AEIEditor, leaning on [K0lb3](https://github.com/K0lb3)'s [etcpak](https://github.com/K0lb3/etcpak) for DirectX and Ericsson image compression internally.
+This tool was closed-source, and relied on a windows DLL for compression. AEPi is a minimal recreation of the image conversion logic provided by AEIEditor, leaning on open source image codecs:
+- [K0lb3/etcpak](https://github.com/K0lb3/etcpak)
+- [K0lb3/tex2img](https://github.com/K0lb3/tex2img)
 
-AEPi was created for the conversion of ship textures for Galaxy on Fire 2, and so currently, only compression is supported, either for Android (ETC) or PC (DXT5) use.
+See <a href="#roadmap">the project roadmap</a> for currently supported and upcoming features.
 
 
 <!-- GETTING STARTED -->
@@ -175,7 +177,37 @@ with Image.open(image_path) as image, Image.open(image2_path) as image2:
 <!-- ROADMAP -->
 ## Roadmap
 
-The project roadmap is now maintained as milestones: https://github.com/Trimatix/AEPi/milestones
+The AEPi 1.0 release will mark feature parity with AEIEditor, which theoretically reflects all of the capabilities required to manipulate Galaxy on Fire 2 AEIs on all platforms.
+
+For details of the work that needs to be done, see the issues listed under the 1.0 milestone: https://github.com/Trimatix/AEPi/milestones
+
+Other work is needed (e.g documentation, QOL improvements...), but below is an overview of the *features* implementation progress towards AEIEditor parity:
+
+|Feature                    |Read support|Write support |
+|---------------------------|:----------:|:------------:|
+|Raw image content          |     ✅     |      ✅      |
+|Basic metadata             |     ✅     |      ✅      |
+|Texture regions            |     ✅     |      ✅      |
+|Mipmapping                 |     ❌     |      ❌      |
+|Compression quality (l/m/h)|     ❌     |      ❌      |
+
+And compression format support progress:
+
+|Format                 |Read support|Write support |
+|-----------------------|:----------:|:------------:|
+|Unknown\*              |     ❌     |      ❌      |
+|Uncompressed_UI        |     ❌     |      ❌      |
+|Uncompressed_CubeMap_PC|     ❌     |      ❌      |
+|Uncompressed_CubeMap   |     ❌     |      ❌      |
+|PVRTC12A               |     ❌     |      ❌      |
+|PVRTC14A               |     ❌     |      ❌      |
+|ATC                    |     ✅     |      ❌      |
+|DXT1                   |     ✅     |      ❌      |
+|DXT3                   |     ❌     |      ❌      |
+|DXT5                   |     ✅     |      ✅      |
+|ETC1                   |     ✅     |      ✅      |
+
+Extra feature requests for after the 1.0 release are very welcome.
 
 To report a bug or request a feature, please submit an issue to the [open issues](https://github.com/Trimatix/AEPi/issues) page of this repository.
 
