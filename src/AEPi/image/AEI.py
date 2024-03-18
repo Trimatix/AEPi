@@ -342,7 +342,7 @@ class AEI:
         finally:
             if tempFp:
                 file.close()
-
+        
         aei = AEI(decompressed, format=format, quality=quality)
         for tex in textures:
             aei.addTexture(tex)
@@ -420,9 +420,7 @@ class AEI:
 
     def _writeImageContent(self, fp: BinaryIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
         imageCodec = codec.compressorFor(format)
-
-        with imageOps.switchRGBA_BGRA(self._image) as swapped:
-            compressed = imageCodec.compress(swapped, format, quality)
+        compressed = imageCodec.compress(self._image, format, quality)
 
         # image length only appears in compressed AEIs
         if format.isCompressed:

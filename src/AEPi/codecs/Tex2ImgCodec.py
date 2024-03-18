@@ -4,6 +4,7 @@ from PIL import Image
 from ..codec import ImageCodecAdaptor, supportsFormats
 from ..constants import CompressionFormat, CompressionQuality
 from ..exceptions import DependancyMissingException
+from ..lib import imageOps 
 
 try:
     import tex2img
@@ -30,5 +31,13 @@ class Tex2ImgCodec(ImageCodecAdaptor):
         im = Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
         
         if im.mode != format.pillowMode:
-            return im.convert(format.pillowMode)
-        return im
+            result = im.convert(format.pillowMode)
+            im.close()
+        else:
+            result = im
+        
+        if format.isBgra:
+            with result:
+                return imageOps.switchRGBA_BGRA(result)
+        
+        return result

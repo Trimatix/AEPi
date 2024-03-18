@@ -3,7 +3,7 @@ from ..exceptions import CodecLoadException
 
 # Discover codecs
 
-_CODECS = ["EtcPakCodec", "Tex2ImgCodec"]
+_CODECS = ["EtcPakCodec", "Tex2ImgCodec", "RawCodec"]
 
 for codec in _CODECS:
     try:
