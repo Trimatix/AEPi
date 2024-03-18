@@ -195,10 +195,10 @@ And compression format support progress:
 
 |Format                 |Read support|Write support |
 |-----------------------|:----------:|:------------:|
-|Unknown                |     ❌     |      ❌      |
-|Uncompressed_UI        |     ❌     |      ❌      |
-|Uncompressed_CubeMap_PC|     ❌     |      ❌      |
-|Uncompressed_CubeMap   |     ❌     |      ❌      |
+|Uncompressed           |     ❌     |      ❌      |
+|Uncompressed_UI        |     ✅     |      ✅      |
+|Uncompressed_CubeMap_PC|     ✅     |      ✅      |
+|Uncompressed_CubeMap   |     ✅     |      ✅      |
 |PVRTC12A               |     ❌     |      ❌      |
 |PVRTC14A               |     ❌     |      ❌      |
 |ATC                    |     ✅     |      ❌      |
