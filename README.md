@@ -158,7 +158,7 @@ image2_path = "another-texture.png"
 
 # create a new .aei file
 with Image.open(image_path) as image, Image.open(image2_path) as image2:
-  # Images are always assumed to be RGBA, not BGRA
+  # Images are always assumed to be RGBA. AEPi handles channel swapping for ETC1 (BGRA)
   with AEI(image) as new_aei:
     # 'textures' - image bounding boxes
     new_aei.addTexture(image2, 0, 0)
