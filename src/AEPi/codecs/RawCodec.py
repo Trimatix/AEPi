@@ -1,6 +1,7 @@
 from typing import Optional
 from typing import Optional
 from PIL import Image
+from contextlib import nullcontext
 from ..codec import ImageCodecAdaptor, supportsFormats
 from ..constants import CompressionFormat, CompressionQuality
 from ..lib import imageOps
@@ -13,10 +14,12 @@ from ..lib import imageOps
 class RawCodec(ImageCodecAdaptor):
     @classmethod
     def compress(cls, im: Image.Image, format: CompressionFormat, quality: Optional[CompressionQuality]) -> bytes:
-        if im.mode != format.pillowMode:
-            im = im.convert(format.pillowMode)
-            
-        return im.tobytes()
+        imageIn, ctx = cls._ensureMode(im, format)
+        with ctx:
+            imageIn, ctx = cls._maybeSwapChannels(imageIn, format)
+            with ctx:
+                return im.tobytes()
+    
     
     @classmethod
     def decompress(cls, fp: bytes, format: CompressionFormat, width: int, height: int, quality: Optional[CompressionQuality]) -> Image.Image:
@@ -33,3 +36,25 @@ class RawCodec(ImageCodecAdaptor):
                 return imageOps.switchRGBA_BGRA(result)
         
         return result
+    
+    
+    @classmethod
+    def _ensureMode(cls, im: Image.Image, format: CompressionFormat):
+        converted = im.mode != format.pillowMode
+        if converted:
+            rgbaImg = im.convert(format.pillowMode)
+        else:
+            rgbaImg = im
+        
+        return rgbaImg, (rgbaImg if converted else nullcontext())
+    
+    
+    @classmethod
+    def _maybeSwapChannels(cls, im: Image.Image, format: CompressionFormat):
+        swapped = format.isBgra
+        if swapped:
+            bgraImg = imageOps.switchRGBA_BGRA(im)
+        else:
+            bgraImg = im
+        
+        return bgraImg, (bgraImg if swapped else nullcontext())
