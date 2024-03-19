@@ -4,6 +4,7 @@ from os import PathLike
 from types import TracebackType
 from typing import Any, List, Optional, Set, Tuple, Type, TypeVar, Union, cast, overload
 from PIL import Image
+from contextlib import nullcontext
 
 from ..lib import imageOps
 from ..lib.binaryio import uint8, uint16, uint32, readUInt8, readUInt16, readUInt32
@@ -336,14 +337,24 @@ class AEI:
 
             decompressed = imageCodec.decompress(compressed, format, width, height, quality)
 
+            if format.isBgra:
+                with decompressed:
+                    imageContent = imageOps.switchRGBA_BGRA(decompressed)
+            else:
+                imageContent = decompressed
+
+            if imageContent.mode != format.pillowMode:
+                with imageContent:
+                    imageContent = imageContent.convert(format.pillowMode)
+
         except Exception as ex:
             raise AeiReadException(None, ex) from ex
 
         finally:
             if tempFp:
                 file.close()
-
-        aei = AEI(decompressed, format=format, quality=quality)
+        
+        aei = AEI(imageContent, format=format, quality=quality)
         for tex in textures:
             aei.addTexture(tex)
 
@@ -421,8 +432,22 @@ class AEI:
     def _writeImageContent(self, fp: BinaryIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
         imageCodec = codec.compressorFor(format)
 
-        with imageOps.switchRGBA_BGRA(self._image) as swapped:
-            compressed = imageCodec.compress(swapped, format, quality)
+        if format.isBgra:
+            imageContent = imageOps.switchRGBA_BGRA(self._image)
+            ctx = imageContent
+        else:
+            imageContent = self._image
+            ctx = nullcontext()
+
+        with ctx:
+            if imageContent.mode != format.pillowMode:
+                imageContent = imageContent.convert(format.pillowMode)
+                ctx = imageContent
+            else:
+                ctx = nullcontext()
+
+            with ctx:
+                compressed = imageCodec.compress(imageContent, format, quality)
 
         # image length only appears in compressed AEIs
         if format.isCompressed:
