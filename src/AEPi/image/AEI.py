@@ -303,8 +303,8 @@ class AEI:
 
             formatId = readUInt8(file, ENDIANNESS)
             format, mipmapped = CompressionFormat.fromBinary(formatId)
-            if mipmapped:
-                raise UnsupportedAeiFeatureException("Mipmapped textures")
+            # if mipmapped:
+            #     raise UnsupportedAeiFeatureException("Mipmapped textures")
             
             imageCodec = codec.decompressorFor(format)
 

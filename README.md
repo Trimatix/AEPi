@@ -188,7 +188,7 @@ Other work is needed (e.g documentation, QOL improvements...), but below is an o
 |Raw image content          |     ✅     |      ✅      |
 |Basic metadata             |     ✅     |      ✅      |
 |Texture regions            |     ✅     |      ✅      |
-|Mipmapping                 |     ❌     |      ❌      |
+|Mipmapping                 |     ✅     |      ❌      |
 |Compression quality (l/m/h)|     ❌     |      ❌      |
 |Symbol maps                |     ❌     |      ❌      |
 
