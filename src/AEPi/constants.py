@@ -6,6 +6,7 @@ from . import exceptions
 FORMAT_PILLOW_MODES: Dict["CompressionFormat", str] = {}
 FORMAT_BITCOUNTS: Dict["CompressionFormat", int] = {}
 BGRA_FORMATS: Set["CompressionFormat"] = set()
+MIPMAPPABLE_FORMATS: Set["CompressionFormat"] = set()
 MASK_MIPMAPPED_FLAG = 0b00000010
 MASK_FORMAT_ID = 0b11111101
 
@@ -25,11 +26,12 @@ class CompressionFormat(Enum):
     DXT3 =                      0b00100001
     DXT5 =                      0b00100100
     ETC1 =                      0b01000000
+    ETC2 =                      0b00010111
 
 
     @classmethod
     def fromBinary(cls, rawId: int) -> Tuple["CompressionFormat", bool]:
-        # Some non-mipmappable formats (uncompressed) have the mipmapping flag as 1, just as part of their ID
+        # Some non-mipmappable formats have the mipmapping flag as 1, just as part of their ID
         if any(f.value == rawId for f in CompressionFormat):
             return CompressionFormat(rawId), False
         
@@ -65,7 +67,7 @@ class CompressionFormat(Enum):
     @property
     def supportsMipmapping(self):
         # This will need some more testing to validate
-        return self.isCompressed
+        return self in MIPMAPPABLE_FORMATS
     
     
     @property
@@ -84,6 +86,7 @@ FORMAT_PILLOW_MODES[CompressionFormat.DXT1] = "RGB"
 FORMAT_PILLOW_MODES[CompressionFormat.DXT3] = "RGBA"
 FORMAT_PILLOW_MODES[CompressionFormat.DXT5] = "RGBA"
 FORMAT_PILLOW_MODES[CompressionFormat.ETC1] = "RGB"
+FORMAT_PILLOW_MODES[CompressionFormat.ETC2] = "RGBA"
 
 FORMAT_BITCOUNTS[CompressionFormat.Uncompressed] = 8 # ?
 FORMAT_BITCOUNTS[CompressionFormat.Uncompressed_UI] = 8 # ?
@@ -96,8 +99,18 @@ FORMAT_BITCOUNTS[CompressionFormat.DXT1] = 4
 FORMAT_BITCOUNTS[CompressionFormat.DXT3] = 8
 FORMAT_BITCOUNTS[CompressionFormat.DXT5] = 8
 FORMAT_BITCOUNTS[CompressionFormat.ETC1] = 4
+FORMAT_BITCOUNTS[CompressionFormat.ETC2] = 8 # ?
 
 BGRA_FORMATS.add(CompressionFormat.ETC1)
+BGRA_FORMATS.add(CompressionFormat.ETC2)
+
+MIPMAPPABLE_FORMATS.add(CompressionFormat.PVRTC12A)
+MIPMAPPABLE_FORMATS.add(CompressionFormat.PVRTC14A)
+MIPMAPPABLE_FORMATS.add(CompressionFormat.ATC)
+MIPMAPPABLE_FORMATS.add(CompressionFormat.DXT1)
+MIPMAPPABLE_FORMATS.add(CompressionFormat.DXT3)
+MIPMAPPABLE_FORMATS.add(CompressionFormat.DXT5)
+MIPMAPPABLE_FORMATS.add(CompressionFormat.ETC1)
 
 FILE_TYPE_HEADER = b"AEimage\x00"
 ENDIANNESS = Endianness("little", "<")
