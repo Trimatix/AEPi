@@ -4,5 +4,5 @@ from .codec import *
 from . import codecs
 from . import lib
 
-__version__ = "0.8.2"
+__version__ = "0.8.3"
 __all__ = ["AEI", "Texture", "CompressionFormat", "CompressionQuality", "codecs", "lib", "codec"]
