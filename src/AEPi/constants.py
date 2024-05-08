@@ -102,7 +102,6 @@ FORMAT_BITCOUNTS[CompressionFormat.ETC1] = 4
 FORMAT_BITCOUNTS[CompressionFormat.ETC2] = 8 # ?
 
 BGR_FORMATS.add(CompressionFormat.ETC1)
-BGR_FORMATS.add(CompressionFormat.ETC2)
 
 MIPMAPPABLE_FORMATS.add(CompressionFormat.PVRTC12A)
 MIPMAPPABLE_FORMATS.add(CompressionFormat.PVRTC14A)
