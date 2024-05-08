@@ -5,7 +5,7 @@ from . import exceptions
 
 FORMAT_PILLOW_MODES: Dict["CompressionFormat", str] = {}
 FORMAT_BITCOUNTS: Dict["CompressionFormat", int] = {}
-BGRA_FORMATS: Set["CompressionFormat"] = set()
+BGR_FORMATS: Set["CompressionFormat"] = set()
 MIPMAPPABLE_FORMATS: Set["CompressionFormat"] = set()
 MASK_MIPMAPPED_FLAG = 0b00000010
 MASK_FORMAT_ID = 0b11111101
@@ -72,7 +72,7 @@ class CompressionFormat(Enum):
     
     @property
     def isBgra(self):
-        return self in BGRA_FORMATS
+        return self in BGR_FORMATS
 
 
 FORMAT_PILLOW_MODES[CompressionFormat.Uncompressed] = "RGBA" # ?
@@ -86,7 +86,7 @@ FORMAT_PILLOW_MODES[CompressionFormat.DXT1] = "RGB"
 FORMAT_PILLOW_MODES[CompressionFormat.DXT3] = "RGBA"
 FORMAT_PILLOW_MODES[CompressionFormat.DXT5] = "RGBA"
 FORMAT_PILLOW_MODES[CompressionFormat.ETC1] = "RGB"
-FORMAT_PILLOW_MODES[CompressionFormat.ETC2] = "RGBA"
+FORMAT_PILLOW_MODES[CompressionFormat.ETC2] = "RGB"
 
 FORMAT_BITCOUNTS[CompressionFormat.Uncompressed] = 8 # ?
 FORMAT_BITCOUNTS[CompressionFormat.Uncompressed_UI] = 8 # ?
@@ -101,8 +101,7 @@ FORMAT_BITCOUNTS[CompressionFormat.DXT5] = 8
 FORMAT_BITCOUNTS[CompressionFormat.ETC1] = 4
 FORMAT_BITCOUNTS[CompressionFormat.ETC2] = 8 # ?
 
-BGRA_FORMATS.add(CompressionFormat.ETC1)
-BGRA_FORMATS.add(CompressionFormat.ETC2)
+BGR_FORMATS.add(CompressionFormat.ETC1)
 
 MIPMAPPABLE_FORMATS.add(CompressionFormat.PVRTC12A)
 MIPMAPPABLE_FORMATS.add(CompressionFormat.PVRTC14A)

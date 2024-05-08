@@ -16,7 +16,7 @@ TEX2IMG_FORMAT_MAP = {
     CompressionFormat.DXT1: 5,
     CompressionFormat.DXT5: 6,
     CompressionFormat.ETC1: 0,
-    CompressionFormat.ETC2: 3
+    CompressionFormat.ETC2: 2
 }
 
 
