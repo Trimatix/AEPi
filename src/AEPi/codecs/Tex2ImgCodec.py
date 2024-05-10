@@ -1,9 +1,11 @@
 from typing import Optional
-from typing import Optional
+
 from PIL import Image
+
 from ..codec import ImageCodecAdaptor, supportsFormats
 from ..constants import CompressionFormat, CompressionQuality
 from ..exceptions import DependancyMissingException
+from ..lib.imageOps import switchRGBA_BGRA
 
 try:
     import tex2img
@@ -19,6 +21,8 @@ TEX2IMG_FORMAT_MAP = {
     CompressionFormat.ETC2: 2
 }
 
+# tex2img seems to swap ETC2's R and B channels - but not ETC1?
+SWAP_CHANNELS_POST = { CompressionFormat.ETC2 }
 
 @supportsFormats(decompresses=TEX2IMG_FORMAT_MAP.keys())
 class Tex2ImgCodec(ImageCodecAdaptor):
@@ -28,5 +32,10 @@ class Tex2ImgCodec(ImageCodecAdaptor):
             raise ValueError(f"Codec {Tex2ImgCodec.__name__} does not support format {format.name}")
         
         decompressed = tex2img.basisu_decompress(fp, width, height, TEX2IMG_FORMAT_MAP[format]) # type: ignore[reportUnknownMemberType]
-
-        return Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
+        im = Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
+        
+        if format in SWAP_CHANNELS_POST:
+            with im:
+                im = switchRGBA_BGRA(im)
+        
+        return im

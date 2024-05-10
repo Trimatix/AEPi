@@ -8,7 +8,7 @@ from .exceptions import UnsupportedCompressionFormatException
 class ImageCodecAdaptor(ABC):
     @classmethod
     def compress(cls, im: Image, format: CompressionFormat, quality: Optional[CompressionQuality]) -> bytes:
-        """Compress a BGRA image into format `format`, with quality `quality`
+        """Compress an RGB(A) image into format `format`, with quality `quality`
 
         :param im: The image to compress
         :type im: Image
@@ -24,7 +24,7 @@ class ImageCodecAdaptor(ABC):
 
     @classmethod
     def decompress(cls, fp: bytes, format: CompressionFormat, width: int, height: int, quality: Optional[CompressionQuality]) -> Image:
-        """Decompress a `format`-compressed BGRA image into a BGRA Image.
+        """Decompress a `format`-compressed RGB(A) image into a RGB(A) Image.
 
         :param fp: The compressed image to decompress
         :type im: bytes
@@ -34,7 +34,7 @@ class ImageCodecAdaptor(ABC):
         :type width: int
         :param height: The height of the image
         :type height: int
-        :return: `fp`, decompressed into a BGRA image
+        :return: `fp`, decompressed into a RGB(A) image
         :rtype: Image
         """
         raise NotImplementedError(f"Codec {cls.__name__} is not capable of decompression")
@@ -51,7 +51,7 @@ def supportsFormats(
         both: Optional[Iterable[CompressionFormat]] = None
     ):
     """Class decorator marking an image codec as able to compress/decompress images into the given compression formats.
-    The codec class must assume that BGRA is passed, and return BGRA.
+    The codec class must assume that RGB(A) is passed, and return RGB(A).
 
     ```py
     supportsFormats(
