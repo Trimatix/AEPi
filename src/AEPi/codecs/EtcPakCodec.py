@@ -32,6 +32,7 @@ class EtcPakCodec(ImageCodecAdaptor):
             elif format is CompressionFormat.ETC2:
                 # etcpak does provide a function for etc2 compression, but it produces almost completely black images
                 # ETC2 is backwards compatible with ETC1, so as a stopgap we'll just compress as etc1
+                # https://www.khronos.org/assets/uplo...pengl-es-bof/Ericsson-ETC2-SIGGRAPH_Aug12.pdf
                 return etcpak.compress_to_etc1(imageIn.tobytes(), imageIn.width, imageIn.height) # type: ignore[reportUnknownVariableType]
             
         raise ValueError(f"Codec {EtcPakCodec.__name__} does not support format {format.name}")
