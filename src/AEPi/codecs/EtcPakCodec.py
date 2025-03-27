@@ -14,12 +14,6 @@ try:
 except ImportError as e:
     raise DependancyMissingException("EtcPakCodec", "etcpak", e)
 
-ETCPAK_FORMAT_MAP = {
-    CompressionFormat.DXT1: 5,
-    CompressionFormat.DXT5: 6,
-    CompressionFormat.ETC1: 0,
-    CompressionFormat.ETC2: 2,
-}
 SWAP_CHANNELS_POST = {CompressionFormat.ETC1, CompressionFormat.ETC2}
 
 
@@ -59,10 +53,6 @@ class EtcPakCodec(ImageCodecAdaptor):
         height: int,
         quality: Optional[CompressionQuality],
     ) -> Image:
-        if format not in ETCPAK_FORMAT_MAP:
-            raise ValueError(
-                f"Codec {EtcPakCodec.__name__} does not support format {format.name}"
-            )
         match format:
             case CompressionFormat.DXT1:
                 decompressed = etcpak.decompress_bc1(fp, width, height)
@@ -72,7 +62,9 @@ class EtcPakCodec(ImageCodecAdaptor):
                 decompressed = etcpak.decompress_etc1_rgb(fp, width, height)
             case CompressionFormat.ETC2:
                 decompressed = etcpak.decompress_etc2_rgb(fp, width, height)
-                
+            case _:
+                raise ValueError(f"Codec {EtcPakCodec.__name__} does not support format {format.name}")
+
         im = PIL.Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
 
         if format in SWAP_CHANNELS_POST:
