@@ -23,7 +23,7 @@ TEX2IMG_FORMAT_MAP = {
 }
 
 # tex2img seems to swap ETC2's R and B channels - but not ETC1?
-SWAP_CHANNELS_POST = {CompressionFormat.ETC2}
+SWAP_CHANNELS_POST = {CompressionFormat.ETC1, CompressionFormat.ETC2}
 
 
 @supportsFormats(decompresses=TEX2IMG_FORMAT_MAP.keys())
