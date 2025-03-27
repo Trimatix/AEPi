@@ -35,16 +35,16 @@ class EtcPakCodec(ImageCodecAdaptor):
         imageIn, ctx = cls._ensureRgba(im)
         with ctx:
             if format is CompressionFormat.DXT5:
-                return etcpak.compress_to_dxt5(imageIn.tobytes(), imageIn.width, imageIn.height)  # type: ignore[reportUnknownVariableType]
+                return etcpak.compress_to_dxt5(imageIn.tobytes(), imageIn.width, imageIn.height) # type: ignore[reportUnknownVariableType]
 
             elif format is CompressionFormat.ETC1:
-                return etcpak.compress_to_etc1(imageIn.tobytes(), imageIn.width, imageIn.height)  # type: ignore[reportUnknownVariableType]
+                return etcpak.compress_to_etc1(imageIn.tobytes(), imageIn.width, imageIn.height) # type: ignore[reportUnknownVariableType]
 
             elif format is CompressionFormat.ETC2:
                 # etcpak does provide a function for etc2 compression, but it produces almost completely black images
                 # ETC2 is backwards compatible with ETC1, so as a stopgap we'll just compress as etc1
                 # https://www.khronos.org/assets/uplo...pengl-es-bof/Ericsson-ETC2-SIGGRAPH_Aug12.pdf
-                return etcpak.compress_to_etc1(imageIn.tobytes(), imageIn.width, imageIn.height)  # type: ignore[reportUnknownVariableType]
+                return etcpak.compress_to_etc1(imageIn.tobytes(), imageIn.width, imageIn.height) # type: ignore[reportUnknownVariableType]
 
         raise ValueError(
             f"Codec {EtcPakCodec.__name__} does not support format {format.name}"
@@ -67,13 +67,10 @@ class EtcPakCodec(ImageCodecAdaptor):
             case CompressionFormat.DXT1:
                 decompressed = etcpak.decompress_bc1(fp, width, height)
             case CompressionFormat.DXT5:
-
                 decompressed = etcpak.decompress_bc3(fp, width, height)
             case CompressionFormat.ETC1:
-
                 decompressed = etcpak.decompress_etc1_rgb(fp, width, height)
             case CompressionFormat.ETC2:
-
                 decompressed = etcpak.decompress_etc2_rgb(fp, width, height)
         im = PIL.Image.frombytes("RGBA", (width, height), decompressed, "raw")  # type: ignore[reportUnknownMemberType]
 

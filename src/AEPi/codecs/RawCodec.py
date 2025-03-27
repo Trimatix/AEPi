@@ -21,7 +21,7 @@ class RawCodec(ImageCodecAdaptor):
         format: CompressionFormat,
         quality: Optional[CompressionQuality],
     ) -> bytes:
-        return im.tobytes()  # type: ignore[reportUnknownMemberType]
+        return im.tobytes() # type: ignore[reportUnknownMemberType]
 
     @classmethod
     def decompress(
@@ -32,5 +32,5 @@ class RawCodec(ImageCodecAdaptor):
         height: int,
         quality: Optional[CompressionQuality],
     ) -> Image.Image:
-        return Image.frombytes("RGBA", (width, height), fp, "raw")  # type: ignore[reportUnknownMemberType]
+        return Image.frombytes("RGBA", (width, height), fp, "raw") # type: ignore[reportUnknownMemberType]
 

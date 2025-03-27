@@ -554,7 +554,7 @@ class AEI:
 
     def _writeSymbols(self, fp: BinaryIO):
         # TODO: Unimplemented
-        fp.write(uint16(0, ENDIANNESS))  # number of symbol groups
+        fp.write(uint16(0, ENDIANNESS)) # number of symbol groups
         ...
 
     def _writeFooterMeta(self, fp: BinaryIO, quality: Optional[CompressionQuality]):

@@ -38,8 +38,8 @@ class Tex2ImgCodec(ImageCodecAdaptor):
                 f"Codec {Tex2ImgCodec.__name__} does not support format {format.name}"
             )
 
-        decompressed = tex2img.basisu_decompress(fp, width, height, TEX2IMG_FORMAT_MAP[format])  # type: ignore[reportUnknownMemberType]
-        im = Image.frombytes("RGBA", (width, height), decompressed, "raw")  # type: ignore[reportUnknownMemberType]
+        decompressed = tex2img.basisu_decompress(fp, width, height, TEX2IMG_FORMAT_MAP[format]) # type: ignore[reportUnknownMemberType]
+        im = Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
 
         if format in SWAP_CHANNELS_POST:
             with im:

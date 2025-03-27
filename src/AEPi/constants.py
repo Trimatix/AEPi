@@ -72,10 +72,10 @@ class CompressionFormat(Enum):
         return self in BGR_FORMATS
 
 
-FORMAT_PILLOW_MODES[CompressionFormat.Uncompressed] = "RGBA"  # ?
+FORMAT_PILLOW_MODES[CompressionFormat.Uncompressed] = "RGBA" # ?
 FORMAT_PILLOW_MODES[CompressionFormat.Uncompressed_UI] = "RGBA"
-FORMAT_PILLOW_MODES[CompressionFormat.Uncompressed_CubeMap_PC] = "RGBA"  # ?
-FORMAT_PILLOW_MODES[CompressionFormat.Uncompressed_CubeMap] = "RGBA"  # ?
+FORMAT_PILLOW_MODES[CompressionFormat.Uncompressed_CubeMap_PC] = "RGBA" # ?
+FORMAT_PILLOW_MODES[CompressionFormat.Uncompressed_CubeMap] = "RGBA" # ?
 FORMAT_PILLOW_MODES[CompressionFormat.PVRTC12A] = "RGBA"
 FORMAT_PILLOW_MODES[CompressionFormat.PVRTC14A] = "RGBA"
 FORMAT_PILLOW_MODES[CompressionFormat.ATC] = "RGBA"
@@ -85,10 +85,10 @@ FORMAT_PILLOW_MODES[CompressionFormat.DXT5] = "RGBA"
 FORMAT_PILLOW_MODES[CompressionFormat.ETC1] = "RGB"
 FORMAT_PILLOW_MODES[CompressionFormat.ETC2] = "RGB"
 
-FORMAT_BITCOUNTS[CompressionFormat.Uncompressed] = 8  # ?
-FORMAT_BITCOUNTS[CompressionFormat.Uncompressed_UI] = 8  # ?
-FORMAT_BITCOUNTS[CompressionFormat.Uncompressed_CubeMap_PC] = 8  # ?
-FORMAT_BITCOUNTS[CompressionFormat.Uncompressed_CubeMap] = 8  # ?
+FORMAT_BITCOUNTS[CompressionFormat.Uncompressed] = 8 # ?
+FORMAT_BITCOUNTS[CompressionFormat.Uncompressed_UI] = 8 # ?
+FORMAT_BITCOUNTS[CompressionFormat.Uncompressed_CubeMap_PC] = 8 # ?
+FORMAT_BITCOUNTS[CompressionFormat.Uncompressed_CubeMap] = 8 # ?
 FORMAT_BITCOUNTS[CompressionFormat.PVRTC12A] = 2
 FORMAT_BITCOUNTS[CompressionFormat.PVRTC14A] = 4
 FORMAT_BITCOUNTS[CompressionFormat.ATC] = 4
@@ -96,7 +96,7 @@ FORMAT_BITCOUNTS[CompressionFormat.DXT1] = 4
 FORMAT_BITCOUNTS[CompressionFormat.DXT3] = 8
 FORMAT_BITCOUNTS[CompressionFormat.DXT5] = 8
 FORMAT_BITCOUNTS[CompressionFormat.ETC1] = 4
-FORMAT_BITCOUNTS[CompressionFormat.ETC2] = 8  # ?
+FORMAT_BITCOUNTS[CompressionFormat.ETC2] = 8 # ?
 
 BGR_FORMATS.add(CompressionFormat.ETC1)
 BGR_FORMATS.add(CompressionFormat.ETC2)
