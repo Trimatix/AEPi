@@ -1,12 +1,10 @@
 from typing import Optional
 
 from PIL import Image
-import etcpak
 
 from ..codec import ImageCodecAdaptor, supportsFormats
 from ..constants import CompressionFormat, CompressionQuality
 from ..exceptions import DependancyMissingException
-from ..lib.imageOps import switchRGBA_BGRA
 
 try:
     import tex2img
