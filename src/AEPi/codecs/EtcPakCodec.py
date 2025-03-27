@@ -1,5 +1,5 @@
 from typing import Optional
-
+import PIL
 from PIL.Image import Image
 from contextlib import nullcontext
 from ..lib.imageOps import switchRGBA_BGRA
