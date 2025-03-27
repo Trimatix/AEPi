@@ -14,7 +14,7 @@ try:
 except ImportError as e:
     raise DependancyMissingException("EtcPakCodec", "etcpak", e)
 
-SWAP_CHANNELS_POST = {CompressionFormat.ETC1, CompressionFormat.ETC2}
+SWAP_CHANNELS_POST = {CompressionFormat.ETC2}
 
 
 @supportsFormats(
