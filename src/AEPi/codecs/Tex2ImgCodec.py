@@ -23,7 +23,7 @@ TEX2IMG_FORMAT_MAP = {
 }
 
 # tex2img seems to swap ETC2's R and B channels - but not ETC1?
-SWAP_CHANNELS_POST = {CompressionFormat.ETC1, CompressionFormat.ETC2}
+SWAP_CHANNELS_POST = {CompressionFormat.ETC2}
 
 
 @supportsFormats(decompresses=TEX2IMG_FORMAT_MAP.keys())
@@ -41,21 +41,8 @@ class Tex2ImgCodec(ImageCodecAdaptor):
             raise ValueError(
                 f"Codec {Tex2ImgCodec.__name__} does not support format {format.name}"
             )
-        match format:
-            case CompressionFormat.DXT1:
-                decompressed = etcpak.decompress_bc1(fp, width, height)
-            case CompressionFormat.DXT5:
 
-                decompressed = etcpak.decompress_bc3(fp, width, height)
-            case CompressionFormat.ETC1:
-
-                decompressed = etcpak.decompress_etc1_rgb(fp, width, height)
-            case CompressionFormat.ETC2:
-
-                decompressed = etcpak.decompress_etc2_rgb(fp, width, height)
-            case _:
-
-                decompressed = tex2img.basisu_decompress(fp, width, height, TEX2IMG_FORMAT_MAP[format])  # type: ignore[reportUnknownMemberType]
+        decompressed = tex2img.basisu_decompress(fp, width, height, TEX2IMG_FORMAT_MAP[format])  # type: ignore[reportUnknownMemberType]
         im = Image.frombytes("RGBA", (width, height), decompressed, "raw")  # type: ignore[reportUnknownMemberType]
 
         if format in SWAP_CHANNELS_POST:
