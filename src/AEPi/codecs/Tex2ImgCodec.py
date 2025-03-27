@@ -1,7 +1,5 @@
 from typing import Optional
-
 from PIL import Image
-
 from ..codec import ImageCodecAdaptor, supportsFormats
 from ..constants import CompressionFormat, CompressionQuality
 from ..exceptions import DependancyMissingException
