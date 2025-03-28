@@ -65,5 +65,5 @@ def test_decompress_ETC1_succeeds():
         actual = CODEC.decompress(compressed, CompressionFormat.ETC1, expected.width, expected.height, None) \
             .convert(expected.mode)
         for coords in zip(range(expected.width), range(expected.height)):
-            pixel = actual.getpixel(coords) # etcpak returns bgr so we need to switch the actual pixels
+            pixel = actual.getpixel(coords)
             assert expected.getpixel(coords) == (pixel[2],pixel[1],pixel[0]) # type: ignore[reportUnknownMemberType]
