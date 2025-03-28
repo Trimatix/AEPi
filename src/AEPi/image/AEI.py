@@ -9,12 +9,22 @@ from contextlib import nullcontext
 from ..lib import imageOps
 from ..lib.binaryio import uint8, uint16, uint32, readUInt8, readUInt16, readUInt32
 
-from ..constants import CompressionFormat, FILE_TYPE_HEADER, ENDIANNESS, CompressionQuality
+from ..constants import (
+    CompressionFormat,
+    FILE_TYPE_HEADER,
+    ENDIANNESS,
+    CompressionQuality,
+)
 from .. import codec
 from .texture import Texture
-from ..exceptions import UnsupportedAeiFeatureException, AeiReadException, AeiWriteException
+from ..exceptions import (
+    UnsupportedAeiFeatureException,
+    AeiReadException,
+    AeiWriteException,
+)
 
 TException = TypeVar("TException", bound=Exception)
+
 
 class AEI:
     """An Abyss Engine Image file.
@@ -35,13 +45,32 @@ class AEI:
     If the AEI is scoped in a `with` statement, when exiting the `with`,
     the AEI will attempt to close all images, and swallow any errors encountered.
     """
-    @overload
-    def __init__(self, shape: Tuple[int, int], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> None: ...
-    
-    @overload
-    def __init__(self, image: Image.Image, /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> None: ...
 
-    def __init__(self, val1: Union[Image.Image, Tuple[int, int]], /, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None):
+    @overload
+    def __init__(
+        self,
+        shape: Tuple[int, int],
+        /,
+        format: Optional[CompressionFormat] = None,
+        quality: Optional[CompressionQuality] = None,
+    ) -> None: ...
+
+    @overload
+    def __init__(
+        self,
+        image: Image.Image,
+        /,
+        format: Optional[CompressionFormat] = None,
+        quality: Optional[CompressionQuality] = None,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        val1: Union[Image.Image, Tuple[int, int]],
+        /,
+        format: Optional[CompressionFormat] = None,
+        quality: Optional[CompressionQuality] = None,
+    ):
         self._textures: List[Texture] = []
         self._texturesWithoutImages: Set[Texture] = set()
         self.format = format
@@ -54,7 +83,6 @@ class AEI:
             self._shape = val1
             self._image = Image.new("RGBA", self._shape)
 
-
     @property
     def shape(self):
         """The dimensions of the AEI, in pixels.
@@ -63,7 +91,6 @@ class AEI:
         :rtype: Tuple[int, int]
         """
         return self._shape
-    
 
     @shape.setter
     def shape(self, value: Tuple[int, int]):
@@ -72,32 +99,33 @@ class AEI:
 
         if widthShrunk or heightShrunk:
             for tex in self.textures:
-                if widthShrunk and tex.x + tex.width > value[0] \
-                        or heightShrunk and tex.y + tex.height > value[1]:
-                    raise ValueError(f"Changing shape from ({self.shape[0]}, {self.shape[1]}) to ({value[0]}, {value[1]}) would cause texture ({tex.x}, {tex.y}) to fall out of bounds")
-        
-        self._shape = value
+                if (
+                    widthShrunk
+                    and tex.x + tex.width > value[0]
+                    or heightShrunk
+                    and tex.y + tex.height > value[1]
+                ):
+                    raise ValueError(
+                        f"Changing shape from ({self.shape[0]}, {self.shape[1]}) to ({value[0]}, {value[1]}) would cause texture ({tex.x}, {tex.y}) to fall out of bounds"
+                    )
 
+        self._shape = value
 
     @property
     def width(self):
         return self.shape[0]
-    
 
     @width.setter
     def width(self, value: int):
         self.shape = (value, self.height)
-    
 
     @property
     def height(self):
         return self.shape[1]
-    
 
     @height.setter
     def height(self, value: int):
         self.shape = (self.width, value)
-
 
     @property
     def textures(self):
@@ -108,34 +136,54 @@ class AEI:
         :rtype: List[Texture]
         """
         return self._textures
-    
 
-    def _validateBoundingBox(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None) -> Tuple[int, int, int, int]:
+    def _validateBoundingBox(
+        self,
+        val1: Union[Texture, int],
+        y: Optional[int] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+    ) -> Tuple[int, int, int, int]:
         if isinstance(val1, Texture):
             y = val1.y
             width = val1.width
             height = val1.height
             val1 = val1.x
-            
+
         elif y is None or width is None or height is None:
             raise ValueError("All of x, y, width and height are required")
-        
-        if val1 < 0 or width < 1 or y < 0 or height < 1 or val1 + width > self.width or y + height > self.height:
+
+        if (
+            val1 < 0
+            or width < 1
+            or y < 0
+            or height < 1
+            or val1 + width > self.width
+            or y + height > self.height
+        ):
             raise ValueError("The bounding box falls out of bounds of the AEI")
-        
+
         return (val1, y, width, height)
 
-
-    def _findTextureByBox(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None):
+    def _findTextureByBox(
+        self,
+        val1: Union[Texture, int],
+        y: Optional[int] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+    ):
         x, y, width, height = self._validateBoundingBox(val1, y, width, height)
-        
+
         try:
-            texture = next(t for t in self.textures if t.x == x and t.y == y and t.width == width and t.height == height)
+            texture = next(
+                t
+                for t in self.textures
+                if t.x == x and t.y == y and t.width == width and t.height == height
+            )
         except StopIteration:
             return None
-        
-        return texture
 
+        return texture
 
     @overload
     def addTexture(self, texture: Texture, /) -> None:
@@ -146,7 +194,7 @@ class AEI:
         :type texture: Texture
         :raises ValueError: If the `texture` falls out of bounds of the AEI
         """
-    
+
     @overload
     def addTexture(self, x: int, y: int, width: int, height: int, /) -> None:
         """Add only a texture bounding box to this AEI. Use the overload with `Image` as the first parameter to add image content.
@@ -172,7 +220,14 @@ class AEI:
         :raises ValueError: If the bounding box falls out of bounds of the AEI
         """
 
-    def addTexture(self, val1: Union[Image.Image, Texture, int], val2: Optional[int] = None, val3: Optional[int] = None, val4: Optional[int] = None, /):
+    def addTexture(
+        self,
+        val1: Union[Image.Image, Texture, int],
+        val2: Optional[int] = None,
+        val3: Optional[int] = None,
+        val4: Optional[int] = None,
+        /,
+    ):
         if isinstance(val1, Texture):
             image = None
             texture = val1
@@ -185,12 +240,12 @@ class AEI:
             raise ValueError("Both x and y are required")
         else:
             image = val1
-            texture = Texture(val2, val3, image.width, image.height) 
+            texture = Texture(val2, val3, image.width, image.height)
 
         existingTexture = self._findTextureByBox(texture)
         if existingTexture is not None:
             raise ValueError("A texture already exists with the given bounding box")
-        
+
         if image is None:
             self._texturesWithoutImages.add(texture)
         else:
@@ -199,11 +254,10 @@ class AEI:
 
             if image.mode != "RGBA":
                 raise ValueError(f"image must be mode RGBA, but {image.mode} was given")
-            
-            self._image.paste(image, (texture.x, texture.y), image)
-        
-        self.textures.append(texture)
 
+            self._image.paste(image, (texture.x, texture.y), image)
+
+        self.textures.append(texture)
 
     def replaceTexture(self, image: Image.Image, texture: Texture):
         """Replace a texture in this AEI.
@@ -219,24 +273,45 @@ class AEI:
         """
         existingTexture = self._findTextureByBox(texture)
         if existingTexture is None:
-            raise KeyError(f"no texture was found with coordinates ({texture.x}, {texture.y}) and dimensions ({texture.width}, {texture.height})")
-        
+            raise KeyError(
+                f"no texture was found with coordinates ({texture.x}, {texture.y}) and dimensions ({texture.width}, {texture.height})"
+            )
+
         if texture.width != image.width or texture.height != image.height:
             raise ValueError("image dimensions do not match the texture dimensions")
 
         if image.mode != "RGBA":
             raise ValueError(f"image must be mode RGBA, but {image.mode} was given")
-        
+
         self._image.paste(image, (texture.x, texture.y), image)
 
+    @overload
+    def removeTexture(
+        self, texture: Texture, /, *, clearImage: Optional[bool] = None
+    ) -> None: ...
 
     @overload
-    def removeTexture(self, texture: Texture, /, *, clearImage: Optional[bool] = None) -> None: ...
+    def removeTexture(
+        self,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        /,
+        *,
+        clearImage: Optional[bool] = None,
+    ) -> None: ...
 
-    @overload
-    def removeTexture(self, x: int, y: int, width: int, height: int, /, *, clearImage: Optional[bool] = None) -> None: ...
-
-    def removeTexture(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None, /, *, clearImage: Optional[bool] = None):
+    def removeTexture(
+        self,
+        val1: Union[Texture, int],
+        y: Optional[int] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        /,
+        *,
+        clearImage: Optional[bool] = None,
+    ):
         """Remove a texture from this AEI, by its bounding box.
 
         :param Optional[bool] clearImage: clear the area of the image. Default: Clear if an image was provided when the texture was added
@@ -244,17 +319,28 @@ class AEI:
         """
         texture = self._findTextureByBox(val1, y, width, height)
         if texture is None:
-            raise KeyError(f"no texture was found with coordinates ({val1}, {y}) and dimensions ({width}, {height})")
-        
-        if clearImage is not None and clearImage or clearImage is None and texture not in self._texturesWithoutImages:
+            raise KeyError(
+                f"no texture was found with coordinates ({val1}, {y}) and dimensions ({width}, {height})"
+            )
+
+        if (
+            clearImage is not None
+            and clearImage
+            or clearImage is None
+            and texture not in self._texturesWithoutImages
+        ):
             # Clear the area that the texture occupied
             self._image.paste(
                 (0, 0, 0, 0),
-                (texture.x, texture.y, texture.x + texture.width, texture.y + texture.height)
+                (
+                    texture.x,
+                    texture.y,
+                    texture.x + texture.width,
+                    texture.y + texture.height,
+                ),
             )
 
         self._textures.remove(texture)
-    
 
     @overload
     def getTexture(self, texture: Texture, /) -> Image.Image: ...
@@ -262,7 +348,14 @@ class AEI:
     @overload
     def getTexture(self, x: int, y: int, width: int, height: int, /) -> Image.Image: ...
 
-    def getTexture(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None, /) -> Image.Image:
+    def getTexture(
+        self,
+        val1: Union[Texture, int],
+        y: Optional[int] = None,
+        width: Optional[int] = None,
+        height: Optional[int] = None,
+        /,
+    ) -> Image.Image:
         """Get a copy of the image defined by the provided bounding box.
 
         :returns: a copy of the image defined by the provided bounding box
@@ -270,9 +363,8 @@ class AEI:
         :raises KeyError: The provided bounding box falls out of bounds of the AEI
         """
         x, y, width, height = self._validateBoundingBox(val1, y, width, height)
-        
-        return self._image.crop((x, y, x + width, y + height))
 
+        return self._image.crop((x, y, x + width, y + height))
 
     @classmethod
     def read(cls, fp: Union[str, PathLike[Any], io.BytesIO]) -> "AEI":
@@ -286,7 +378,7 @@ class AEI:
         """
         if isinstance(fp, io.StringIO):
             raise ValueError("fp must be of binary type, not StringIO")
-        
+
         file: Union[io.BufferedReader, io.BytesIO]
 
         if tempFp := (not isinstance(fp, io.BytesIO)):
@@ -299,13 +391,15 @@ class AEI:
         try:
             bFileType = file.read(len(FILE_TYPE_HEADER))
             if bFileType != FILE_TYPE_HEADER:
-                raise ValueError(f"Given file is of unknown type '{str(bFileType, encoding='utf-8')}' expected '{str(FILE_TYPE_HEADER, encoding='utf-8')}'")
+                raise ValueError(
+                    f"Given file is of unknown type '{str(bFileType, encoding='utf-8')}' expected '{str(FILE_TYPE_HEADER, encoding='utf-8')}'"
+                )
 
             formatId = readUInt8(file, ENDIANNESS)
             format, mipmapped = CompressionFormat.fromBinary(formatId)
             # if mipmapped:
             #     raise UnsupportedAeiFeatureException("Mipmapped textures")
-            
+
             imageCodec = codec.decompressorFor(format)
 
             width = readUInt16(file, ENDIANNESS)
@@ -322,6 +416,14 @@ class AEI:
 
             if format.isCompressed:
                 imageLength = readUInt32(file, ENDIANNESS)
+                imageLength = (
+                    width * height // 2
+                )  # The actual size etcpak allocates for data see https://github.com/wolfpld/etcpak/blob/479998c13bbf597c78f1e92c7b5627578ed00245/BlockData.cpp#L343
+                if format in [
+                    CompressionFormat.ETC2,
+                    CompressionFormat.DXT5,
+                ]:  # Adjust for these formats specifically
+                    imageLength *= 2
             else:
                 imageLength = 4 * width * height
 
@@ -329,13 +431,15 @@ class AEI:
 
             symbolGroups = readUInt16(file, ENDIANNESS)
 
-            if symbolGroups > 0:
-                raise UnsupportedAeiFeatureException("Symbol maps")
-            
-            bQuality = readUInt8(file, ENDIANNESS, None)
-            quality = cast(Optional[CompressionQuality], bQuality) 
+            # if symbolGroups > 0:
+            #    raise UnsupportedAeiFeatureException("Symbol maps")
 
-            decompressed = imageCodec.decompress(compressed, format, width, height, quality)
+            bQuality = readUInt8(file, ENDIANNESS, None)
+            quality = cast(Optional[CompressionQuality], bQuality)
+
+            decompressed = imageCodec.decompress(
+                compressed, format, width, height, quality
+            )
 
             if format.isBgra:
                 with decompressed:
@@ -353,15 +457,19 @@ class AEI:
         finally:
             if tempFp:
                 file.close()
-        
+
         aei = AEI(imageContent, format=format, quality=quality)
         for tex in textures:
             aei.addTexture(tex)
 
         return aei
-    
 
-    def write(self, fp: Optional[BinaryIO] = None, format: Optional[CompressionFormat] = None, quality: Optional[CompressionQuality] = None) -> BinaryIO:
+    def write(
+        self,
+        fp: Optional[BinaryIO] = None,
+        format: Optional[CompressionFormat] = None,
+        quality: Optional[CompressionQuality] = None,
+    ) -> BinaryIO:
         """Write this AEI to a BytesIO file.
 
         :param fp: Optional file to write to. If not given, a new one is created. defaults to None
@@ -379,7 +487,9 @@ class AEI:
         quality = self.quality if quality is None else quality
 
         if format is None:
-            raise ValueError("This AEI has no compression format specified. Set self.format, or specify the format in the self.toFile.format kwarg")
+            raise ValueError(
+                "This AEI has no compression format specified. Set self.format, or specify the format in the self.toFile.format kwarg"
+            )
 
         fp = io.BytesIO() if fp is None else fp
 
@@ -395,15 +505,15 @@ class AEI:
 
         except Exception as ex:
             raise AeiWriteException(None, ex) from ex
-        
+
         finally:
             if tempTexture:
                 self.removeTexture(0, 0, self.width, self.height)
 
         return fp
-    
-#region write-util
-    
+
+    # region write-util
+
     def _writeHeaderMeta(self, fp: BinaryIO, format: CompressionFormat):
         fp.write(FILE_TYPE_HEADER)
         fp.write(uint8(format.value, ENDIANNESS))
@@ -413,23 +523,18 @@ class AEI:
                 fp.write(uint16(v, ENDIANNESS))
 
         # AEI dimensions and texture count
-        writeUInt16(
-            self.width,
-            self.height,
-            len(self.textures)
-        )
+        writeUInt16(self.width, self.height, len(self.textures))
 
         # texture bounding boxes
         for texture in self.textures:
-            writeUInt16(
-                texture.x,
-                texture.y,
-                texture.width,
-                texture.height
-            )
-    
+            writeUInt16(texture.x, texture.y, texture.width, texture.height)
 
-    def _writeImageContent(self, fp: BinaryIO, format: CompressionFormat, quality: Optional[CompressionQuality]):
+    def _writeImageContent(
+        self,
+        fp: BinaryIO,
+        format: CompressionFormat,
+        quality: Optional[CompressionQuality],
+    ):
         imageCodec = codec.compressorFor(format)
 
         if format.isBgra:
@@ -455,34 +560,32 @@ class AEI:
 
         fp.write(compressed)
 
-
     def _writeSymbols(self, fp: BinaryIO):
-        #TODO: Unimplemented
+        # TODO: Unimplemented
         fp.write(uint16(0, ENDIANNESS)) # number of symbol groups
         ...
-
 
     def _writeFooterMeta(self, fp: BinaryIO, quality: Optional[CompressionQuality]):
         if quality is not None:
             fp.write(uint8(quality, ENDIANNESS))
 
-#endregion write-util
+    # endregion write-util
 
     def close(self):
-        """Close the underlying image.
-        """
+        """Close the underlying image."""
         self._image.close()
 
-
     def __enter__(self):
-        """This method is called when entering a `with` statement.
-        """
+        """This method is called when entering a `with` statement."""
         return self
 
-
-    def __exit__(self, exceptionType: Type[TException], exception: TException, trace: TracebackType):
-        """This method is called when exiting a `with` statement.
-        """
+    def __exit__(
+        self,
+        exceptionType: Type[TException],
+        exception: TException,
+        trace: TracebackType,
+    ):
+        """This method is called when exiting a `with` statement."""
         try:
             self.close()
         except:
