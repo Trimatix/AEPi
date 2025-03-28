@@ -49,3 +49,36 @@ def test_decompress_ATC_succeeds():
             .convert(expected.mode)
         for coords in zip(range(expected.width), range(expected.height)):
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
+
+@pytest.mark.skip(reason="segfault due to tex2img dependency")
+@pytest.mark.codecs
+@pytest.mark.codecs_DXT1
+def test_decompress_DXT1_succeeds():
+    with smileyRoundtripImage(CompressionFormat.DXT1) as expected:
+        compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.DXT1]
+        actual = CODEC.decompress(compressed, CompressionFormat.DXT1, expected.width, expected.height, None) \
+            .convert(expected.mode)
+        for coords in zip(range(expected.width), range(expected.height)):
+            assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
+
+@pytest.mark.skip(reason="segfault due to tex2img dependency")
+@pytest.mark.codecs
+@pytest.mark.codecs_DXT5
+def test_decompress_DXT5_succeeds():
+    with smileyRoundtripImage(CompressionFormat.DXT5) as expected:
+        compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.DXT5]
+        actual = CODEC.decompress(compressed, CompressionFormat.DXT5, expected.width, expected.height, None) \
+            .convert(expected.mode)
+        for coords in zip(range(expected.width), range(expected.height)):
+            assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
+
+@pytest.mark.skip(reason="segfault due to tex2img dependency")
+@pytest.mark.codecs
+@pytest.mark.codecs_ETC1
+def test_decompress_ETC1_succeeds():
+    with smileyRoundtripImage(CompressionFormat.ETC1) as expected:
+        compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.ETC1]
+        actual = CODEC.decompress(compressed, CompressionFormat.ETC1, expected.width, expected.height, None) \
+            .convert(expected.mode)
+        for coords in zip(range(expected.width), range(expected.height)):
+            assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
