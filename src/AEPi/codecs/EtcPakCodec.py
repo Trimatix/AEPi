@@ -62,10 +62,7 @@ class EtcPakCodec(ImageCodecAdaptor):
                 decompressed = etcpak.decompress_etc1_rgb(fp, width, height)
             case CompressionFormat.ETC2:
                 decompressed = etcpak.decompress_etc2_rgb(fp, width, height)
-            case _:
-                raise ValueError(f"Codec {EtcPakCodec.__name__} does not support format {format.name}")
-
-        im = PIL.PIL.Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
+        im = Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
 
         if format in SWAP_CHANNELS_POST:
             with im:
