@@ -1,6 +1,6 @@
 from PIL.Image import Image
 from AEPi import CompressionFormat
-from AEPi.codecs.Tex2ImgCodec import Tex2ImgCodec
+from AEPi.codecs.EtcPakCodec import EtcPakCodec
 from PIL import Image
 import pytest
 
@@ -24,7 +24,7 @@ SMILEY_COMPRESSED_RAW = {
     CompressionFormat.ETC1: b"\x5E\x57\xC4\xBF\x11\x11\xCC\xCC\x5E\x57\xC4\xBF\x11\x11\xCC\xCC\x5E\x57\xC4\xBF\x11\x11\xCC\xCC\x99\x91\xF8\xDA\x13\x33\xFD\xDD\xF8\xF8\xF8\x02\x00\x00\x00\x00\x48\x48\x48\xFF\x00\x04\xFF\xFF\x48\x48\x48\xFF\x04\x00\xFF\xFF\xF8\xF8\xF8\x02\x00\x00\x00\x00\x48\x48\x48\xFF\x40\x00\xFF\xFF\xCC\x66\x66\xFC\x88\x88\x77\x7F\xF8\xF8\xF8\x1D\x88\x88\xCC\xCC\x48\x48\x48\xFF\x00\x48\xFF\xFF\xF8\xF8\xF8\x02\x00\x00\x00\x00\xDD\x66\x66\xFC\x13\x30\xEC\xCF\xF8\xF8\xF8\x02\x00\x00\x00\x00\x7F\x9E\x6F\xFE\xC8\x88\x37\x77\x5E\x57\xC4\xBF\x11\x11\xCC\xCC\x5E\x57\xC4\xBF\x11\x11\xCC\xCC\x5E\x57\xC4\xBF\x11\x11\xCC\xCC\x99\x91\xF8\xDA\x13\x33\xFD\xDD\xF8\xF8\xF8\x02\x00\x00\x00\x00\x48\x48\x48\xFF\x00\x04\xFF\xFF\x48\x48\x48\xFF\x04\x00\xFF\xFF\xF8\xF8\xF8\x02\x00\x00\x00\x00\x48\x48\x48\xFF\x40\x00\xFF\xFF\xCC\x66\x66\xFC\x88\x88\x77\x7F\xF8\xF8\xF8\x1D\x88\x88\xCC\xCC\x48\x48\x48\xFF\x00\x48\xFF\xFF\xF8\xF8\xF8\x02\x00\x00\x00\x00\xDD\x66\x66\xFC\x13\x30\xEC\xCF\xF8\xF8\xF8\x02\x00\x00\x00\x00\x7F\x9E\x6F\xFE\xC8\x88\x37\x77",
 }
 
-CODEC = Tex2ImgCodec()
+CODEC = EtcPakCodec()
 
 def smileyRoundtripImage(format: CompressionFormat):
     png = Image.open(SMILEY_ROUNDTRIP_PNG_PATHS[format])
@@ -45,7 +45,7 @@ def smileyRoundtripImage(format: CompressionFormat):
 #         for coords in zip(range(expected.width), range(expected.height)):
 #             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
-@pytest.mark.skip(reason="segfault due to tex2img dependency")
+@pytest.mark.skip(reason="unsupported by codec")
 @pytest.mark.codecs
 @pytest.mark.codecs_ATC
 def test_decompress_ATC_succeeds():
@@ -56,7 +56,7 @@ def test_decompress_ATC_succeeds():
         for coords in zip(range(expected.width), range(expected.height)):
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
-@pytest.mark.skip(reason="segfault due to tex2img dependency")
+
 @pytest.mark.codecs
 @pytest.mark.codecs_DXT1
 def test_decompress_DXT1_succeeds():
@@ -67,7 +67,7 @@ def test_decompress_DXT1_succeeds():
         for coords in zip(range(expected.width), range(expected.height)):
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
-@pytest.mark.skip(reason="segfault due to tex2img dependency")
+
 @pytest.mark.codecs
 @pytest.mark.codecs_DXT5
 def test_decompress_DXT5_succeeds():
@@ -78,7 +78,7 @@ def test_decompress_DXT5_succeeds():
         for coords in zip(range(expected.width), range(expected.height)):
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
-@pytest.mark.skip(reason="segfault due to tex2img dependency")
+
 @pytest.mark.codecs
 @pytest.mark.codecs_ETC1
 def test_decompress_ETC1_succeeds():
@@ -87,4 +87,5 @@ def test_decompress_ETC1_succeeds():
         actual = CODEC.decompress(compressed, CompressionFormat.ETC1, expected.width, expected.height, None) \
             .convert(expected.mode)
         for coords in zip(range(expected.width), range(expected.height)):
-            assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
+            pixel = actual.getpixel(coords) # etcpak returns bgr so we need to switch the actual pixels
+            assert expected.getpixel(coords) == (pixel[2],pixel[1],pixel[0]) # type: ignore[reportUnknownMemberType]
