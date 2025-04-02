@@ -2,12 +2,32 @@ from io import BytesIO
 import pytest
 from PIL.Image import Image
 from PIL import Image
+from contextlib import contextmanager
+from typing import Any, Callable
 
 from AEPi import AEI, Texture, CompressionFormat
 from AEPi.codec import ImageCodecAdaptor, supportsFormats
 from AEPi.constants import CompressionFormat
+from AEPi.codec import compressors as RegisteredCompressors
+from AEPi.codec import decompressors as RegisteredDecompressors
 
-from tests.testUtils import mockCodecsContext
+@contextmanager
+def mockCodecsContext(setupCodecs: Callable[[], Any]):
+    decompressors = {k: v for k, v in RegisteredDecompressors.items()}
+    compressors = {k: v for k, v in RegisteredCompressors.items()}
+    RegisteredDecompressors.clear()
+    RegisteredCompressors.clear()
+
+    setupCodecs()
+    
+    try:
+        yield
+    finally:
+        RegisteredDecompressors.clear()
+        RegisteredCompressors.clear()
+        RegisteredDecompressors.update(decompressors)
+        RegisteredCompressors.update(compressors)
+
 
 SMILEY_AEI_2TEXTURES_PATH = "src/tests/assets/smiley_ATC_twotextures_nomipmap_nosymbols_high.aei"
 SMILEY_PNG_PATH = "src/tests/assets/smiley.png"
