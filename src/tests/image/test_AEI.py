@@ -34,14 +34,12 @@ g_useSmiley = False
 class MockCodec(ImageCodecAdaptor):
     @classmethod
     def compress(cls, im, format, quality): # type: ignore[reportMissingParameterType]
-        global g_useSmiley
         if g_useSmiley:
             return COMPRESSED_SMILEY_ATC
         return COMPRESSED
     
     @classmethod
     def decompress(cls, fp, format, width, height, quality): # type: ignore[reportMissingParameterType]
-        global g_useSmiley
         if g_useSmiley:
             return smileyImage()
         return DECOMPRESSED
