@@ -7,7 +7,7 @@ from AEPi import AEI, Texture, CompressionFormat
 from AEPi.codec import ImageCodecAdaptor, supportsFormats
 from AEPi.constants import CompressionFormat
 
-from tests.testUtils import mockCodecsContext
+from src.tests.testUtils import mockCodecsContext
 
 SMILEY_AEI_2TEXTURES_PATH = "src/tests/assets/smiley_ATC_twotextures_nomipmap_nosymbols_high.aei"
 SMILEY_PNG_PATH = "src/tests/assets/smiley.png"
