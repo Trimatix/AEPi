@@ -6,7 +6,7 @@ from AEPi.codec import ImageCodecAdaptor, supportsFormats, compressorFor, decomp
 from AEPi.constants import CompressionFormat
 from AEPi.exceptions import UnsupportedCompressionFormatException
 
-from src.tests.testUtils import MockCodec, mockCodecsContext
+from tests.testUtils import MockCodec, mockCodecsContext
 
 class Dxt5Compressor(MockCodec): ...
 
