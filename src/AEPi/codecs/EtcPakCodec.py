@@ -2,12 +2,12 @@ from typing import Optional
 import PIL
 from PIL.Image import Image
 from contextlib import nullcontext
+import os
+
 from ..lib.imageOps import switchRGBA_BGRA
-
-
 from ..codec import ImageCodecAdaptor, supportsFormats
 from ..constants import CompressionFormat, CompressionQuality
-from ..exceptions import DependancyMissingException
+from ..exceptions import DependancyMissingException, UnsupportedCompressionFormatException
 
 try:
     import etcpak
@@ -18,9 +18,10 @@ SWAP_CHANNELS_POST = {CompressionFormat.ETC1,CompressionFormat.ETC2}
 
 
 @supportsFormats(
-    decompresses=[CompressionFormat.DXT1],
-    both=[CompressionFormat.DXT5, CompressionFormat.ETC1, CompressionFormat.ETC2],
+    compresses=[CompressionFormat.ETC1, CompressionFormat.ETC2],
+    decompresses=[CompressionFormat.ETC2, CompressionFormat.DXT1, CompressionFormat.DXT5],
 )
+@supportsFormats(decompresses=[CompressionFormat.ETC1], notOnPlatforms=["nt"])
 class EtcPakCodec(ImageCodecAdaptor):
     @classmethod
     def compress(
@@ -59,9 +60,12 @@ class EtcPakCodec(ImageCodecAdaptor):
             case CompressionFormat.DXT5:
                 decompressed = etcpak.decompress_bc3(fp, width, height)
             case CompressionFormat.ETC1:
+                if os.name == "nt":
+                    raise UnsupportedCompressionFormatException(format, f"ETC1 is not supported on operating system '{os.name}' by {EtcPakCodec.__name__}. Please use another codec.")
                 decompressed = etcpak.decompress_etc1_rgb(fp, width, height)
             case CompressionFormat.ETC2:
                 decompressed = etcpak.decompress_etc2_rgb(fp, width, height)
+
         im = PIL.Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
 
         if format in SWAP_CHANNELS_POST:

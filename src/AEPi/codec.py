@@ -1,6 +1,7 @@
 from abc import ABC
-from typing import Dict, Optional, Type, TypeVar, Iterable
+from typing import List, Optional, Tuple, Type, TypeVar, Iterable
 from PIL.Image import Image
+import os
 
 from .constants import CompressionFormat, CompressionQuality
 from .exceptions import UnsupportedCompressionFormatException
@@ -40,15 +41,16 @@ class ImageCodecAdaptor(ABC):
         raise NotImplementedError(f"Codec {cls.__name__} is not capable of decompression")
 
 
-compressors: Dict[CompressionFormat, Type[ImageCodecAdaptor]] = {}
-decompressors: Dict[CompressionFormat, Type[ImageCodecAdaptor]] = {}
+compressors: List[Tuple[CompressionFormat, Optional[List[str]], Type[ImageCodecAdaptor]]] = []
+decompressors: List[Tuple[CompressionFormat, Optional[List[str]], Type[ImageCodecAdaptor]]] = []
 
 TCodec = TypeVar("TCodec", bound=ImageCodecAdaptor)
 
 def supportsFormats(
         compresses: Optional[Iterable[CompressionFormat]] = None,
         decompresses: Optional[Iterable[CompressionFormat]] = None,
-        both: Optional[Iterable[CompressionFormat]] = None
+        both: Optional[Iterable[CompressionFormat]] = None,
+        notOnPlatforms: Optional[Iterable[str]] = None
     ):
     """Class decorator marking an image codec as able to compress/decompress images into the given compression formats.
     The codec class must assume that RGB(A) is passed, and return RGB(A).
@@ -68,26 +70,34 @@ def supportsFormats(
     )
     ```
 
+    If a codec does NOT support the named formats on any particular platforms, give them
+    in the `notOnPlatforms` parameter. For possible values, see `os.name`.
+
     :param compresses: The formats that the codec can compress. defaults to None
     :type format: Optional[Iterable[CompressionFormat]]
     :param decompresses: The formats that the codec can decompress. defaults to None
     :type format: Optional[Iterable[CompressionFormat]]
     :param both: The formats that the codec can compress AND decompress. defaults to None
     :type format: Optional[Iterable[CompressionFormat]]
+    :param notOnPlatforms: Platforms on which the formats are NOT supported. defaults to None
+    :type notOnPlatforms: Optional[Iterable[str]]
     """
+    notOnPlatforms = list(notOnPlatforms) if notOnPlatforms else None
+
     def inner(cls: Type[TCodec]) -> Type[TCodec]:
         if compresses:
             for f in compresses:
-                compressors[f] = cls
+                compressors.append((f, notOnPlatforms, cls))
 
         if decompresses:
             for f in decompresses:
-                decompressors[f] = cls
+                decompressors.append((f, notOnPlatforms, cls))
 
         if both:
             for f in both:
-                compressors[f] = cls
-                decompressors[f] = cls
+                compressors.append((f, notOnPlatforms, cls))
+                decompressors.append((f, notOnPlatforms, cls))
+
         return cls
     return inner
 
@@ -101,9 +111,14 @@ def compressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
     :rtype: Type[ImageCodecAdaptor]
     :raises AeiWriteException: If no compatible codec is loaded
     """
-    if format not in compressors:
+    try:
+        return next(
+            codec
+            for (f, notOnPlatforms, codec) in compressors
+            if f == format and (notOnPlatforms is None or os.name not in notOnPlatforms)
+        )
+    except StopIteration:
         raise UnsupportedCompressionFormatException(format)
-    return compressors[format]
 
 
 def decompressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
@@ -115,6 +130,11 @@ def decompressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
     :rtype: Type[ImageCodecAdaptor]
     :raises AeiReadException: If no compatible codec is loaded
     """
-    if format not in decompressors:
+    try:
+        return next(
+            codec
+            for (f, notOnPlatforms, codec) in decompressors
+            if f == format and (notOnPlatforms is None or os.name not in notOnPlatforms)
+        )
+    except StopIteration:
         raise UnsupportedCompressionFormatException(format)
-    return decompressors[format]
