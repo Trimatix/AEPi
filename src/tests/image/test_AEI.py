@@ -1,12 +1,13 @@
 from io import BytesIO
-
-from PIL.Image import Image
-from AEPi import AEI, Texture, CompressionFormat
-from AEPi.codec import ImageCodecAdaptor, supportsFormats
 import pytest
+from PIL.Image import Image
 from PIL import Image
 
+from AEPi import AEI, Texture, CompressionFormat
+from AEPi.codec import ImageCodecAdaptor, supportsFormats
 from AEPi.constants import CompressionFormat
+
+from src.tests.testUtils import mockCodecsContext
 
 SMILEY_AEI_2TEXTURES_PATH = "src/tests/assets/smiley_ATC_twotextures_nomipmap_nosymbols_high.aei"
 SMILEY_PNG_PATH = "src/tests/assets/smiley.png"
@@ -30,9 +31,6 @@ def smileyImage():
 
 g_useSmiley = False
 
-@supportsFormats(
-    both=[CompressionFormat.ATC]
-)
 class MockCodec(ImageCodecAdaptor):
     @classmethod
     def compress(cls, im, format, quality): # type: ignore[reportMissingParameterType]
@@ -47,6 +45,10 @@ class MockCodec(ImageCodecAdaptor):
         if g_useSmiley:
             return smileyImage()
         return DECOMPRESSED
+
+
+def setupCodecs():
+    supportsFormats(both=[CompressionFormat.ATC])(MockCodec)
 
 #region dimensions
 
@@ -131,7 +133,7 @@ def test_getHeight_getsHeight():
 
 
 def test_read_readsImage():
-    with AEI.read(PIXEL_AEI_PATH) as aei:
+    with mockCodecsContext(setupCodecs), AEI.read(PIXEL_AEI_PATH) as aei:
         assert aei.width == DECOMPRESSED.width
         assert aei.height == DECOMPRESSED.height
 
@@ -141,7 +143,7 @@ def test_read_readsImage():
 
 
 def test_read_readsTextures():
-    with AEI.read(PIXEL_AEI_PATH) as aei:
+    with mockCodecsContext(setupCodecs), AEI.read(PIXEL_AEI_PATH) as aei:
         assert aei.textures[0].x == 0
         assert aei.textures[0].y == 0
         assert aei.textures[0].width == DECOMPRESSED.width
@@ -151,7 +153,7 @@ def test_read_readsTextures():
 def test_read_twoTextures_isCorrect():
     global g_useSmiley
     g_useSmiley = True
-    with AEI.read(SMILEY_AEI_2TEXTURES_PATH) as aei:
+    with mockCodecsContext(setupCodecs), AEI.read(SMILEY_AEI_2TEXTURES_PATH) as aei:
         assert len(aei.textures) == 2
         assert aei.textures[0].shape == (8, 8)
         assert aei.textures[0].position == (0, 0)
@@ -164,7 +166,12 @@ def test_read_twoTextures_isCorrect():
 #region write
 
 def test_write_isCorrect():
-    with AEI(DECOMPRESSED) as aei, BytesIO() as outBytes, open(PIXEL_AEI_PATH, "rb") as expected:
+    with (
+        mockCodecsContext(setupCodecs),
+        AEI(DECOMPRESSED) as aei,
+        BytesIO() as outBytes,
+        open(PIXEL_AEI_PATH, "rb") as expected
+    ):
         aei.write(outBytes, format=CompressionFormat.ATC, quality=3)
         expectedText = expected.read()
         outBytes.seek(0)
@@ -175,15 +182,20 @@ def test_write_isCorrect():
 def test_write_twoTextures_isCorrect():
     global g_useSmiley
     g_useSmiley = True
-    with smileyImage() as png, open(SMILEY_AEI_2TEXTURES_PATH, "rb") as expected:
-        with AEI(png) as aei, BytesIO() as outBytes:
-            aei.addTexture(0, 0, 8, 8)
-            aei.addTexture(8, 8, 8, 8)
-            aei.write(outBytes, format=CompressionFormat.ATC, quality=3)
-            expectedText = expected.read()
-            outBytes.seek(0)
-            actualText = outBytes.read()
-            assert expectedText == actualText
+    with (
+        mockCodecsContext(setupCodecs),
+        smileyImage() as png,
+        open(SMILEY_AEI_2TEXTURES_PATH, "rb") as expected,
+        AEI(png) as aei,
+        BytesIO() as outBytes
+    ):
+        aei.addTexture(0, 0, 8, 8)
+        aei.addTexture(8, 8, 8, 8)
+        aei.write(outBytes, format=CompressionFormat.ATC, quality=3)
+        expectedText = expected.read()
+        outBytes.seek(0)
+        actualText = outBytes.read()
+        assert expectedText == actualText
     g_useSmiley = False
 
 #endregion write

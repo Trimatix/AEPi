@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import BinaryIO, Optional
 import PIL
 from PIL.Image import Image
 from contextlib import nullcontext
@@ -73,6 +73,26 @@ class EtcPakCodec(ImageCodecAdaptor):
                 im = switchRGBA_BGRA(im)
 
         return im
+    
+    @classmethod
+    def getCompressedImageLength(cls,
+        readLength: int,
+        fp: BinaryIO,
+        format: CompressionFormat,
+        mipmapped: bool,
+        width: int,
+        height: int,
+    ) -> int:
+        if not mipmapped:
+            return super().getCompressedImageLength(readLength, fp, format, mipmapped, width, height)
+        
+        imageLength = width * height // 2
+
+        # Adjust for these formats specifically
+        if format in (CompressionFormat.ETC2, CompressionFormat.DXT5):
+            imageLength *= 2
+
+        return imageLength
 
     @classmethod
     def _ensureRgba(cls, im: Image):

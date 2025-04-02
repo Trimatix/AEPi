@@ -1,5 +1,6 @@
 from abc import ABC
-from typing import List, Optional, Tuple, Type, TypeVar, Iterable
+from dataclasses import dataclass
+from typing import BinaryIO, Dict, List, Optional, Type, TypeVar, Iterable
 from PIL.Image import Image
 import os
 
@@ -39,10 +40,46 @@ class ImageCodecAdaptor(ABC):
         :rtype: Image
         """
         raise NotImplementedError(f"Codec {cls.__name__} is not capable of decompression")
+    
+
+    @classmethod
+    def getCompressedImageLength(
+        cls,
+        readLength: int,
+        fp: BinaryIO,
+        format: CompressionFormat,
+        mipmapped: bool,
+        width: int,
+        height: int
+    ) -> int:
+        """When reading an AEI file, override the compressed image length to read, in bytes, from `fp`.
+
+        :param readLength: The length defined by the file
+        :type readLength: int
+        :param fp: The AEI file, with the cursor at the start position of the compressed image content
+        :type fp: BinaryIO
+        :param format: The compression format
+        :type format: CompressionFormat
+        :param mipmapped: Whether the image contains mipmaps
+        :type mipmapped: bool
+        :param width: The width of the image
+        :type width: int
+        :param height: The height of the image
+        :type height: int
+        :return: The full length in bytes of the compressed image content
+        :rtype: int
+        """
+        return readLength
 
 
-compressors: List[Tuple[CompressionFormat, Optional[List[str]], Type[ImageCodecAdaptor]]] = []
-decompressors: List[Tuple[CompressionFormat, Optional[List[str]], Type[ImageCodecAdaptor]]] = []
+@dataclass
+class CodecRegistration:
+    codec: Type[ImageCodecAdaptor]
+    notOnPlatforms: Optional[List[str]]
+
+
+compressors: Dict[CompressionFormat, List[CodecRegistration]] = {}
+decompressors: Dict[CompressionFormat, List[CodecRegistration]] = {}
 
 TCodec = TypeVar("TCodec", bound=ImageCodecAdaptor)
 
@@ -50,7 +87,7 @@ def supportsFormats(
         compresses: Optional[Iterable[CompressionFormat]] = None,
         decompresses: Optional[Iterable[CompressionFormat]] = None,
         both: Optional[Iterable[CompressionFormat]] = None,
-        notOnPlatforms: Optional[Iterable[str]] = None
+        notOnPlatforms: Optional[Iterable[str]] = None,
     ):
     """Class decorator marking an image codec as able to compress/decompress images into the given compression formats.
     The codec class must assume that RGB(A) is passed, and return RGB(A).
@@ -85,18 +122,20 @@ def supportsFormats(
     notOnPlatforms = list(notOnPlatforms) if notOnPlatforms else None
 
     def inner(cls: Type[TCodec]) -> Type[TCodec]:
+        registration = CodecRegistration(cls, notOnPlatforms)
+
         if compresses:
             for f in compresses:
-                compressors.append((f, notOnPlatforms, cls))
+                compressors.setdefault(f, []).append(registration)
 
         if decompresses:
             for f in decompresses:
-                decompressors.append((f, notOnPlatforms, cls))
+                decompressors.setdefault(f, []).append(registration)
 
         if both:
             for f in both:
-                compressors.append((f, notOnPlatforms, cls))
-                decompressors.append((f, notOnPlatforms, cls))
+                compressors.setdefault(f, []).append(registration)
+                decompressors.setdefault(f, []).append(registration)
 
         return cls
     return inner
@@ -111,14 +150,17 @@ def compressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
     :rtype: Type[ImageCodecAdaptor]
     :raises AeiWriteException: If no compatible codec is loaded
     """
-    try:
-        return next(
-            codec
-            for (f, notOnPlatforms, codec) in compressors
-            if f == format and (notOnPlatforms is None or os.name not in notOnPlatforms)
-        )
-    except StopIteration:
-        raise UnsupportedCompressionFormatException(format)
+    if codecs := compressors.get(format, None):
+        try:
+            return next(
+                reg.codec
+                for reg in codecs
+                if reg.notOnPlatforms is None or os.name not in reg.notOnPlatforms
+            )
+        except StopIteration:
+            pass
+
+    raise UnsupportedCompressionFormatException(format)
 
 
 def decompressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
@@ -130,11 +172,14 @@ def decompressorFor(format: CompressionFormat) -> Type[ImageCodecAdaptor]:
     :rtype: Type[ImageCodecAdaptor]
     :raises AeiReadException: If no compatible codec is loaded
     """
-    try:
-        return next(
-            codec
-            for (f, notOnPlatforms, codec) in decompressors
-            if f == format and (notOnPlatforms is None or os.name not in notOnPlatforms)
-        )
-    except StopIteration:
-        raise UnsupportedCompressionFormatException(format)
+    if codecs := decompressors.get(format, None):
+        try:
+            return next(
+                reg.codec
+                for reg in codecs
+                if reg.notOnPlatforms is None or os.name not in reg.notOnPlatforms
+            )
+        except StopIteration:
+            pass
+
+    raise UnsupportedCompressionFormatException(format)
