@@ -15,7 +15,7 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-    - uses: ./.github/actions/set-up-code.yml
+    - uses: ./.github/actions/set-up-code
     - name: Install tools
       run: |
         pip install flake8
@@ -32,7 +32,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: ./.github/actions/set-up-code.yml
+    - uses: ./.github/actions/set-up-code
     - name: Install tools
       run: |
         pip install pytest pytest-cov
@@ -101,7 +101,7 @@ jobs:
   sonarqube:
     runs-on: ubuntu-latest
     steps:
-      - uses: ./.github/actions/set-up-code.yml
+      - uses: ./.github/actions/set-up-code
         with:
           fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
       - name: SonarQube Scan
