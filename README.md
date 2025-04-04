@@ -104,7 +104,7 @@ See <a href="#roadmap">the project roadmap</a> for currently supported and upcom
 ## Getting Started
 ### Prerequisites
 
-* python 3.6+
+* python 3.11+ is required, as this project uses structural pattern matching.
 
 ### Installation
 
