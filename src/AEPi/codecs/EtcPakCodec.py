@@ -61,7 +61,7 @@ class EtcPakCodec(ImageCodecAdaptor):
                 decompressed = etcpak.decompress_bc3(fp, width, height)
             case CompressionFormat.ETC1:
                 if os.name == "nt":
-                    raise UnsupportedCompressionFormatException(format, f"ETC1 is not supported on operating system '{os.name}' by {EtcPakCodec.__name__}. Please use another codec.")
+                    raise UnsupportedCompressionFormatException(format, f"{CompressionFormat.ETC1.name} is not supported on operating system '{os.name}' by {EtcPakCodec.__name__}. Please use another codec.")
                 decompressed = etcpak.decompress_etc1_rgb(fp, width, height)
             case CompressionFormat.ETC2:
                 decompressed = etcpak.decompress_etc2_rgb(fp, width, height)

@@ -1,10 +1,11 @@
+import os
 from typing import Optional
 
 from PIL import Image
 
 from ..codec import ImageCodecAdaptor, supportsFormats
 from ..constants import CompressionFormat, CompressionQuality
-from ..exceptions import DependancyMissingException
+from ..exceptions import DependancyMissingException, UnsupportedCompressionFormatException
 from ..lib.imageOps import switchRGBA_BGRA
 
 try:
@@ -31,6 +32,9 @@ class Tex2ImgCodec(ImageCodecAdaptor):
         if format not in TEX2IMG_FORMAT_MAP:
             raise ValueError(f"Codec {Tex2ImgCodec.__name__} does not support format {format.name}")
         
+        if os.name == "posix":
+            raise UnsupportedCompressionFormatException(format, f"Operating system '{os.name}' by {Tex2ImgCodec.__name__}. Please use another codec.")
+
         decompressed = tex2img.basisu_decompress(fp, width, height, TEX2IMG_FORMAT_MAP[format]) # type: ignore[reportUnknownMemberType]
         im = Image.frombytes("RGBA", (width, height), decompressed, "raw") # type: ignore[reportUnknownMemberType]
         
