@@ -397,9 +397,7 @@ class AEI:
 
             formatId = readUInt8(file, ENDIANNESS)
             format, mipmapped = CompressionFormat.fromBinary(formatId)
-            # if mipmapped:
-            #     raise UnsupportedAeiFeatureException("Mipmapped textures")
-
+            
             imageCodec = codec.decompressorFor(format)
 
             width = readUInt16(file, ENDIANNESS)
@@ -416,16 +414,10 @@ class AEI:
 
             if format.isCompressed:
                 imageLength = readUInt32(file, ENDIANNESS)
-                imageLength = (
-                    width * height // 2
-                )  # The actual size etcpak allocates for data see https://github.com/wolfpld/etcpak/blob/479998c13bbf597c78f1e92c7b5627578ed00245/BlockData.cpp#L343
-                if format in [
-                    CompressionFormat.ETC2,
-                    CompressionFormat.DXT5,
-                ]:  # Adjust for these formats specifically
-                    imageLength *= 2
             else:
                 imageLength = 4 * width * height
+
+            imageLength = imageCodec.getCompressedImageLength(imageLength, file, format, mipmapped, width, height)
 
             compressed = file.read(imageLength)
 

@@ -1,8 +1,10 @@
 from PIL.Image import Image
 from AEPi import CompressionFormat
 from AEPi.codecs.EtcPakCodec import EtcPakCodec
+from AEPi.exceptions import UnsupportedCompressionFormatException
 from PIL import Image
 import pytest
+import os
 
 from AEPi.constants import CompressionFormat
 
@@ -57,12 +59,23 @@ def test_decompress_DXT5_succeeds():
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
 
 
+@pytest.mark.skipif(os.name == "nt", reason="EtcPak ETC1 decompress segfaults on windows")
 @pytest.mark.codecs
 @pytest.mark.codecs_ETC1
-def test_decompress_ETC1_succeeds():
+def test_decompress_ETC1_succeeds_onLinux():
     with smileyRoundtripImage(CompressionFormat.ETC1) as expected:
         compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.ETC1]
         actual = CODEC.decompress(compressed, CompressionFormat.ETC1, expected.width, expected.height, None) \
             .convert(expected.mode)
         for coords in zip(range(expected.width), range(expected.height)):
             assert expected.getpixel(coords) == actual.getpixel(coords) # type: ignore[reportUnknownMemberType]
+
+
+@pytest.mark.skipif(os.name != "nt", reason="EtcPak ETC1 decompress segfaults on windows")
+@pytest.mark.codecs
+@pytest.mark.codecs_ETC1
+def test_decompress_ETC1_raises_onWindows():
+    with smileyRoundtripImage(CompressionFormat.ETC1) as expected:
+        with pytest.raises(UnsupportedCompressionFormatException):
+            compressed = SMILEY_COMPRESSED_RAW[CompressionFormat.ETC1]
+            CODEC.decompress(compressed, CompressionFormat.ETC1, expected.width, expected.height, None)
