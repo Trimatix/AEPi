@@ -83,9 +83,6 @@ class EtcPakCodec(ImageCodecAdaptor):
         width: int,
         height: int,
     ) -> int:
-        if not mipmapped:
-            return super().getCompressedImageLength(readLength, fp, format, mipmapped, width, height)
-        
         imageLength = width * height // 2
 
         # Adjust for these formats specifically
