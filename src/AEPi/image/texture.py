@@ -47,3 +47,6 @@ class Texture:
         :type value: Tuple[int, int]
         """
         (self.x, self.y) = value
+
+    def __str__(self):
+        return f"Texture: x: {self.x}, y: {self.y}, w: {self.width}, h: {self.height}"

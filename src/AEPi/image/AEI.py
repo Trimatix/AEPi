@@ -312,13 +312,13 @@ class AEI:
             height = readUInt16(file, ENDIANNESS)
             numTextures = readUInt16(file, ENDIANNESS)
 
-            textures: List[Texture] = []
+            textures: list[Texture] = []
             for _ in range(numTextures):
-                texX = readUInt16(file, ENDIANNESS)
-                texY = readUInt16(file, ENDIANNESS)
-                texWidth = readUInt16(file, ENDIANNESS)
-                texHeight = readUInt16(file, ENDIANNESS)
-                textures.append(Texture(texX, texY, texWidth, texHeight))
+                x = readUInt16(file, ENDIANNESS)
+                y = readUInt16(file, ENDIANNESS)
+                w = readUInt16(file, ENDIANNESS)
+                h = readUInt16(file, ENDIANNESS)
+                textures.append(Texture(x, y, w, h))
 
             if format.isCompressed:
                 imageLength = readUInt32(file, ENDIANNESS)
@@ -327,10 +327,28 @@ class AEI:
 
             compressed = file.read(imageLength)
 
-            symbolGroups = readUInt16(file, ENDIANNESS)
+            fontsNum = readUInt16(file, ENDIANNESS)
+            fonts: list = []
 
-            if symbolGroups > 0:
-                raise UnsupportedAeiFeatureException("Symbol maps")
+            for _ in range(fontsNum):
+                fontLen = readUInt16(file, ENDIANNESS)
+                font: dict[str,Texture] = {}
+                symbols: list[str] = []
+                for _ in range(fontLen):
+                    glyph = file.read(2).decode("utf-16le")
+                    symbols.append(glyph)
+
+                for glyph in symbols:
+                    x = readUInt16(file, ENDIANNESS)
+                    y = readUInt16(file, ENDIANNESS)
+                    w = readUInt16(file, ENDIANNESS)
+                    h = readUInt16(file, ENDIANNESS)
+                    font[glyph] = Texture(x, y, w, h)
+                fonts.append(font)
+        
+            # for sg in fonts:
+            #     for glyph in sg:
+            #         print(glyph.char)
             
             bQuality = readUInt8(file, ENDIANNESS, None)
             quality = cast(Optional[CompressionQuality], bQuality) 
