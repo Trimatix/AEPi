@@ -46,6 +46,7 @@ class AEI:
         self._texturesWithoutImages: Set[Texture] = set()
         self.format = format
         self.quality: Optional[CompressionQuality] = quality
+        self.fonts: list[dict[str, Texture]] = []
 
         if isinstance(val1, Image.Image):
             self._shape = val1.size
@@ -121,7 +122,7 @@ class AEI:
             raise ValueError("All of x, y, width and height are required")
         
         if val1 < 0 or width < 1 or y < 0 or height < 1 or val1 + width > self.width or y + height > self.height:
-            raise ValueError("The bounding box falls out of bounds of the AEI")
+            print("WARNING: The bounding box falls out of bounds of the AEI")
         
         return (val1, y, width, height)
 
@@ -189,7 +190,7 @@ class AEI:
 
         existingTexture = self._findTextureByBox(texture)
         if existingTexture is not None:
-            raise ValueError("A texture already exists with the given bounding box")
+            print("WARNING: A texture already exists with the given bounding box")
         
         if image is None:
             self._texturesWithoutImages.add(texture)
@@ -346,10 +347,11 @@ class AEI:
                     font[glyph] = Texture(x, y, w, h)
                 fonts.append(font)
         
-            # for sg in fonts:
-            #     for glyph in sg:
-            #         print(glyph.char)
-            
+            # for i, font in enumerate(fonts):
+            #     print({font 1.})
+            #     for key, value in font.items():
+            #         print(f" {key} {value}")
+        
             bQuality = readUInt8(file, ENDIANNESS, None)
             quality = cast(Optional[CompressionQuality], bQuality) 
 
@@ -375,6 +377,7 @@ class AEI:
         aei = AEI(imageContent, format=format, quality=quality)
         for tex in textures:
             aei.addTexture(tex)
+        aei.fonts = fonts
 
         return aei
     
@@ -475,10 +478,20 @@ class AEI:
 
 
     def _writeSymbols(self, fp: BinaryIO):
-        #TODO: Unimplemented
-        fp.write(uint16(0, ENDIANNESS)) # number of symbol groups
-        ...
-
+        fp.write(uint16(len(self.fonts), ENDIANNESS)) # number of symbol groups
+        
+        for font in self.fonts:
+            symbols = io.BytesIO()
+            glyphs = io.BytesIO()
+            for s, g in font.items():
+                symbols.write(s.encode("utf-16le"))
+                glyphs.write(uint16(g.x,      ENDIANNESS))
+                glyphs.write(uint16(g.y,      ENDIANNESS))
+                glyphs.write(uint16(g.width,  ENDIANNESS))
+                glyphs.write(uint16(g.height, ENDIANNESS))
+            
+            fp.write(symbols.getvalue())
+            fp.write(glyphs.getvalue())
 
     def _writeFooterMeta(self, fp: BinaryIO, quality: Optional[CompressionQuality]):
         if quality is not None:
