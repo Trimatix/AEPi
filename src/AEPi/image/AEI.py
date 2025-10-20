@@ -121,10 +121,14 @@ class AEI:
         elif y is None or width is None or height is None:
             raise ValueError("All of x, y, width and height are required")
         
-        if val1 < 0 or width < 1 or y < 0 or height < 1 or val1 + width > self.width or y + height > self.height:
+        x = val1
+        if x >= self.width or x + width <= 0 or y >= self.height or y + height <= 0:
+            raise ValueError("The bounding box has no common area with bounds of the AEI")
+        
+        if x < 0 or width < 1 or y < 0 or height < 1 or x + width > self.width or y + height > self.height:
             print("WARNING: The bounding box falls out of bounds of the AEI")
         
-        return (val1, y, width, height)
+        return (x, y, width, height)
 
 
     def _findTextureByBox(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None):

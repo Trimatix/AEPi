@@ -50,3 +50,12 @@ class Texture:
 
     def __str__(self):
         return f"Texture: x: {self.x}, y: {self.y}, w: {self.width}, h: {self.height}"
+    
+    def equals(self, other: "Texture") -> bool: 
+        if not isinstance(other, Texture):
+            return False
+        return  (
+            self.x == other.x and
+            self.y == other.y and
+            self.width == other.width and
+            self.height == other.height)

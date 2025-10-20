@@ -187,7 +187,7 @@ def test_write_twoTextures_isCorrect():
 def test_write_symbols_isCorrect():
     global g_useSmiley
     g_useSmiley = True
-
+    
     _test_tex = [
         # font 0
         Texture(0,0,3,3),
@@ -209,16 +209,17 @@ def test_write_symbols_isCorrect():
                 "ą": _test_tex[3],
                 "™": _test_tex[4]
             })
-            aei.write(temp, format=CompressionFormat.Uncompressed_UI, quality=3)
+            aei.write(temp, format=CompressionFormat.Uncompressed_UI)
+            temp.seek(0)
             with AEI.read(temp) as new_aei:
                 assert len(new_aei.fonts) == 2
                 assert len(new_aei.fonts[0]) == 2
                 assert len(new_aei.fonts[1]) == 3
-                assert new_aei.fonts[0]["."] == _test_tex[0]
-                assert new_aei.fonts[0]["a"] == _test_tex[1]
-                assert new_aei.fonts[1]["ж"] == _test_tex[2]
-                assert new_aei.fonts[1]["ą"] == _test_tex[3]
-                assert new_aei.fonts[1]["™"] == _test_tex[4]
+                assert new_aei.fonts[0]["."].equals(_test_tex[0])
+                assert new_aei.fonts[0]["a"].equals(_test_tex[1])
+                assert new_aei.fonts[1]["ж"].equals(_test_tex[2])
+                assert new_aei.fonts[1]["ą"].equals(_test_tex[3])
+                assert new_aei.fonts[1]["™"].equals(_test_tex[4])
            
     g_useSmiley = False
 
@@ -249,9 +250,15 @@ def test_addTexture_conflict_warns():
         aei.addTexture(Texture(0, 0, 10, 10))
 
 
+def test_addTexture_outOfBounds_raises():
+    with AEI((10, 10)) as aei:
+        with pytest.raises(ValueError):
+            aei.addTexture(Texture(11, 0, 10, 10))
+
+
 def test_addTexture_outOfBounds_warns():
     with AEI((10, 10)) as aei:
-        aei.addTexture(Texture(11, 0, 10, 10))
+        aei.addTexture(Texture(5, 0, 10, 10))
 
 
 def test_addTexture_withImage_incorrectMode_raises():
@@ -281,9 +288,10 @@ def test_removeTexture_unknown_raises():
             aei.removeTexture(0, 0, 10, 10)
 
 
-def test_removeTexture_outOfBounds_warns():
+def test_removeTexture_outOfBounds_raises():
     with AEI((10, 10)) as aei:
-        aei.removeTexture(11, 0, 10, 10)
+        with pytest.raises(ValueError):
+            aei.removeTexture(11, 0, 10, 10)
 
 
 def test_replaceTexture_replacesTexture():
@@ -299,14 +307,22 @@ def test_replaceTexture_unknown_raises():
             aei.replaceTexture(png, Texture(0, 0, 1, 1))
 
 
+def test_replaceTexture_outOfBounds_raises():
+    with Image.new("RGBA", (1, 1)) as png, AEI((10, 10)) as aei:
+        with pytest.raises(ValueError):
+            aei.addTexture(Texture(11, 0, 1, 1))
+            aei.replaceTexture(png, Texture(11, 0, 1, 1))
+
 def test_replaceTexture_outOfBounds_warns():
     with Image.new("RGBA", (1, 1)) as png, AEI((10, 10)) as aei:
-        aei.replaceTexture(png, Texture(11, 0, 1, 1))
+        aei.addTexture(Texture(5, 0, 1, 1))
+        aei.replaceTexture(png, Texture(5, 0, 1, 1))
 
 
-def test_replaceTexture_withImage_incorrectTexture_warns():
+def test_replaceTexture_withImage_incorrectTexture_raises():
     with Image.new("RGBA", (1, 1)) as png, AEI((10, 10)) as aei:
-        aei.replaceTexture(png, Texture(10, 0, 2, 2))
+        with pytest.raises(ValueError):
+            aei.replaceTexture(png, Texture(10, 0, 2, 2))
 
 
 def test_replaceTexture_withImage_incorrectMode_raises():
@@ -323,8 +339,14 @@ def test_getTexture_getsTexture():
         assert actual.getpixel((0, 0)) == (255, 255, 255, 255) # type: ignore[reportUnknownMemberType]
 
 
+def test_getTexture_outOfBounds_raises():
+    with AEI((10, 10)) as aei:
+        with pytest.raises(ValueError):
+            aei.getTexture(Texture(11, 0, 10, 10))
+
+
 def test_getTexture_outOfBounds_warns():
     with AEI((10, 10)) as aei:
-        aei.getTexture(Texture(11, 0, 10, 10))
+        aei.getTexture(Texture(5, 0, 10, 10))
 
 #endregion textures
