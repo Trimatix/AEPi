@@ -14,7 +14,7 @@ except ImportError as e:
 
 TEX2IMG_FORMAT_MAP = {
     # CompressionFormat.PVRTC14A: 12, # Tex2ImgCodec segfaults decoding PVRTC with all tests (#29)
-    CompressionFormat.ATC: 14,
+    CompressionFormat.ATC: 14, #cATC_RGBA_INTERPOLATED_ALPHA
     CompressionFormat.DXT1: 5,
     CompressionFormat.DXT5: 6,
     CompressionFormat.ETC1: 0,

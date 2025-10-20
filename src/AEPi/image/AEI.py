@@ -46,6 +46,7 @@ class AEI:
         self._texturesWithoutImages: Set[Texture] = set()
         self.format = format
         self.quality: Optional[CompressionQuality] = quality
+        self.fonts: list[dict[str, Texture]] = []
 
         if isinstance(val1, Image.Image):
             self._shape = val1.size
@@ -120,10 +121,14 @@ class AEI:
         elif y is None or width is None or height is None:
             raise ValueError("All of x, y, width and height are required")
         
-        if val1 < 0 or width < 1 or y < 0 or height < 1 or val1 + width > self.width or y + height > self.height:
-            raise ValueError("The bounding box falls out of bounds of the AEI")
+        x = val1
+        if x >= self.width or x + width <= 0 or y >= self.height or y + height <= 0:
+            raise ValueError("The bounding box has no common area with bounds of the AEI")
         
-        return (val1, y, width, height)
+        if x < 0 or width < 1 or y < 0 or height < 1 or x + width > self.width or y + height > self.height:
+            print("WARNING: The bounding box falls out of bounds of the AEI")
+        
+        return (x, y, width, height)
 
 
     def _findTextureByBox(self, val1: Union[Texture, int], y: Optional[int] = None, width: Optional[int] = None, height: Optional[int] = None):
@@ -189,7 +194,7 @@ class AEI:
 
         existingTexture = self._findTextureByBox(texture)
         if existingTexture is not None:
-            raise ValueError("A texture already exists with the given bounding box")
+            print("WARNING: A texture already exists with the given bounding box")
         
         if image is None:
             self._texturesWithoutImages.add(texture)
@@ -312,13 +317,13 @@ class AEI:
             height = readUInt16(file, ENDIANNESS)
             numTextures = readUInt16(file, ENDIANNESS)
 
-            textures: List[Texture] = []
+            textures: list[Texture] = []
             for _ in range(numTextures):
-                texX = readUInt16(file, ENDIANNESS)
-                texY = readUInt16(file, ENDIANNESS)
-                texWidth = readUInt16(file, ENDIANNESS)
-                texHeight = readUInt16(file, ENDIANNESS)
-                textures.append(Texture(texX, texY, texWidth, texHeight))
+                x = readUInt16(file, ENDIANNESS)
+                y = readUInt16(file, ENDIANNESS)
+                w = readUInt16(file, ENDIANNESS)
+                h = readUInt16(file, ENDIANNESS)
+                textures.append(Texture(x, y, w, h))
 
             if format.isCompressed:
                 imageLength = readUInt32(file, ENDIANNESS)
@@ -327,11 +332,31 @@ class AEI:
 
             compressed = file.read(imageLength)
 
-            symbolGroups = readUInt16(file, ENDIANNESS)
+            fontsNum = readUInt16(file, ENDIANNESS)
+            fonts: list = []
 
-            if symbolGroups > 0:
-                raise UnsupportedAeiFeatureException("Symbol maps")
-            
+            for _ in range(fontsNum):
+                fontLen = readUInt16(file, ENDIANNESS)
+                font: dict[str,Texture] = {}
+                symbols: list[str] = []
+                for _ in range(fontLen):
+                    glyph = file.read(2).decode("utf-16le")
+                    symbols.append(glyph)
+
+                for glyph in symbols:
+                    x = readUInt16(file, ENDIANNESS)
+                    y = readUInt16(file, ENDIANNESS)
+                    w = readUInt16(file, ENDIANNESS)
+                    h = readUInt16(file, ENDIANNESS)
+                    font[glyph] = Texture(x, y, w, h)
+
+                fonts.append(font)
+        
+            # for i, font in enumerate(fonts):
+            #     print(font {i}.)
+            #     for key, value in font.items():
+            #         print(f" {key} {value}")
+        
             bQuality = readUInt8(file, ENDIANNESS, None)
             quality = cast(Optional[CompressionQuality], bQuality) 
 
@@ -357,6 +382,7 @@ class AEI:
         aei = AEI(imageContent, format=format, quality=quality)
         for tex in textures:
             aei.addTexture(tex)
+        aei.fonts = fonts
 
         return aei
     
@@ -384,7 +410,7 @@ class AEI:
         fp = io.BytesIO() if fp is None else fp
 
         # AEIs must contain at least one texture
-        if tempTexture := (len(self.textures) == 0):
+        if tempTexture := (len(self.textures) == 0 and len(self.fonts) == 0):
             self.addTexture(Texture(0, 0, self.width, self.height))
 
         try:
@@ -457,10 +483,21 @@ class AEI:
 
 
     def _writeSymbols(self, fp: BinaryIO):
-        #TODO: Unimplemented
-        fp.write(uint16(0, ENDIANNESS)) # number of symbol groups
-        ...
-
+        fp.write(uint16(len(self.fonts), ENDIANNESS)) # number of symbol groups
+        
+        for font in self.fonts:
+            symbols = io.BytesIO()
+            glyphs = io.BytesIO()
+            for s, g in font.items():
+                symbols.write(s.encode("utf-16le"))
+                glyphs.write(uint16(g.x,      ENDIANNESS))
+                glyphs.write(uint16(g.y,      ENDIANNESS))
+                glyphs.write(uint16(g.width,  ENDIANNESS))
+                glyphs.write(uint16(g.height, ENDIANNESS))
+            
+            fp.write(uint16(len(font), ENDIANNESS))
+            fp.write(symbols.getvalue())
+            fp.write(glyphs.getvalue())
 
     def _writeFooterMeta(self, fp: BinaryIO, quality: Optional[CompressionQuality]):
         if quality is not None:
