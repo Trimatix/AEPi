@@ -345,10 +345,11 @@ class AEI:
                     w = readUInt16(file, ENDIANNESS)
                     h = readUInt16(file, ENDIANNESS)
                     font[glyph] = Texture(x, y, w, h)
+
                 fonts.append(font)
         
             # for i, font in enumerate(fonts):
-            #     print({font 1.})
+            #     print(font {i}.)
             #     for key, value in font.items():
             #         print(f" {key} {value}")
         
@@ -405,7 +406,7 @@ class AEI:
         fp = io.BytesIO() if fp is None else fp
 
         # AEIs must contain at least one texture
-        if tempTexture := (len(self.textures) == 0):
+        if tempTexture := (len(self.textures) == 0 and len(self.fonts) == 0):
             self.addTexture(Texture(0, 0, self.width, self.height))
 
         try:
@@ -490,6 +491,7 @@ class AEI:
                 glyphs.write(uint16(g.width,  ENDIANNESS))
                 glyphs.write(uint16(g.height, ENDIANNESS))
             
+            fp.write(uint16(len(font), ENDIANNESS))
             fp.write(symbols.getvalue())
             fp.write(glyphs.getvalue())
 
